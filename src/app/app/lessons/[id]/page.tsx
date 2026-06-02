@@ -89,7 +89,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
       <div className="grid md:grid-cols-2 gap-6">
         <section className="bg-white border rounded-xl p-6">
           <h2 className="text-lg font-semibold mb-3">Materiais</h2>
-          <LessonFiles lessonId={lesson.id} currentUserId={user.id} initial={files ?? []} />
+          <LessonFiles lessonId={lesson.id} currentUserId={user.id} isTeacher={isTeacher} initial={files ?? []} />
         </section>
 
         <section className="bg-white border rounded-xl p-6">

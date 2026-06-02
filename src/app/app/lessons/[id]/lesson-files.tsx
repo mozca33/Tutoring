@@ -18,10 +18,12 @@ type FileRow = {
 export default function LessonFiles({
   lessonId,
   currentUserId,
+  isTeacher,
   initial,
 }: {
   lessonId: string;
   currentUserId: string;
+  isTeacher: boolean;
   initial: FileRow[];
 }) {
   const router = useRouter();
@@ -82,12 +84,14 @@ export default function LessonFiles({
 
   return (
     <div className="space-y-3">
-      <label className="block">
-        <span className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700">
-          {uploading ? "Enviando..." : "Enviar arquivo"}
-        </span>
-        <input type="file" accept={ACCEPT_ATTR} className="hidden" onChange={onFileChange} disabled={uploading} />
-      </label>
+      {isTeacher && (
+        <label className="block">
+          <span className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700">
+            {uploading ? "Enviando..." : "Enviar arquivo"}
+          </span>
+          <input type="file" accept={ACCEPT_ATTR} className="hidden" onChange={onFileChange} disabled={uploading} />
+        </label>
+      )}
       {error && <p className="text-red-600 text-sm">{error}</p>}
       {files.length === 0 ? (
         <p className="text-slate-500 text-sm">Nenhum material enviado.</p>
