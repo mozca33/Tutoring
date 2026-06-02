@@ -32,7 +32,14 @@ function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email: mail.value, password });
     setLoading(false);
-    if (error) return setError("E-mail ou senha incorretos.");
+    if (error) {
+      // Credencial inválida = mensagem genérica (anti-enumeração).
+      // Outros erros (servidor/config) mostram o motivo para facilitar diagnóstico.
+      if (error.code === "invalid_credentials" || error.status === 400) {
+        return setError("E-mail ou senha incorretos.");
+      }
+      return setError(`Erro ao entrar: ${error.message}`);
+    }
     router.push("/app");
     router.refresh();
   }
