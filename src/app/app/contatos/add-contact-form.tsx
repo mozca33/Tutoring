@@ -18,32 +18,33 @@ export default function AddContactForm() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: student, error: lookupErr } = await supabase
+    const { data: contact, error: lookupErr } = await supabase
       .from("profiles")
-      .select("id, role")
+      .select("id")
       .ilike("email", email.trim())
       .maybeSingle();
 
-    if (lookupErr || !student) {
+    if (lookupErr || !contact) {
       setLoading(false);
-      return setMsg({ type: "err", text: "Aluno não encontrado. Verifique o e-mail." });
+      return setMsg({ type: "err", text: "Usuário não encontrado. Verifique o e-mail." });
     }
-    if (student.role !== "student") {
+    if (contact.id === user.id) {
       setLoading(false);
-      return setMsg({ type: "err", text: "Esse usuário não está cadastrado como aluno." });
+      return setMsg({ type: "err", text: "Você não pode adicionar a si mesmo." });
     }
 
+    // Qualquer usuário (aluno ou outro professor) pode ser vinculado como aluno.
     const { error } = await supabase.from("relationships").insert({
       teacher_id: user.id,
-      student_id: student.id,
+      student_id: contact.id,
     });
     setLoading(false);
 
     if (error) {
-      const text = error.code === "23505" ? "Esse aluno já está vinculado." : error.message;
+      const text = error.code === "23505" ? "Esse contato já está vinculado." : error.message;
       return setMsg({ type: "err", text });
     }
-    setMsg({ type: "ok", text: "Aluno vinculado!" });
+    setMsg({ type: "ok", text: "Contato vinculado!" });
     setEmail("");
     router.refresh();
   }
