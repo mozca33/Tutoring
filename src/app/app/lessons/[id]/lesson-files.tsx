@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
 
 type FileRow = {
   id: string;
@@ -31,6 +32,8 @@ export default function LessonFiles({
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const valid = validateUpload(file);
+    if (!valid.ok) { e.target.value = ""; setError(valid.error!); return; }
     setError(null);
     setUploading(true);
     const supabase = createClient();
@@ -83,7 +86,7 @@ export default function LessonFiles({
         <span className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700">
           {uploading ? "Enviando..." : "Enviar arquivo"}
         </span>
-        <input type="file" className="hidden" onChange={onFileChange} disabled={uploading} />
+        <input type="file" accept={ACCEPT_ATTR} className="hidden" onChange={onFileChange} disabled={uploading} />
       </label>
       {error && <p className="text-red-600 text-sm">{error}</p>}
       {files.length === 0 ? (
