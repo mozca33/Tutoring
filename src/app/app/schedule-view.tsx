@@ -26,7 +26,9 @@ const STATUS: Record<string, { label: string; dot: string; chip: string }> = {
   cancelled: { label: "Cancelada", dot: "bg-red-500", chip: "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300" },
 };
 
-const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const WEEKDAYS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS_MIN = ["D", "S", "T", "Q", "Q", "S", "S"];
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 function dayKey(d: Date) {
@@ -35,6 +37,8 @@ function dayKey(d: Date) {
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+
+type Popup = { date: Date; x: number; y: number };
 
 export default function ScheduleView({
   lessons,
@@ -47,25 +51,23 @@ export default function ScheduleView({
 }) {
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selected, setSelected] = useState<Date>(today);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [popup, setPopup] = useState<Popup | null>(null);
+  const [dialogDate, setDialogDate] = useState<Date | null>(null);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Lesson[]>();
     for (const l of lessons) {
       const k = dayKey(new Date(l.scheduled_at));
-      (map.get(k) ?? map.set(k, []).get(k)!).push(l);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(l);
     }
     for (const arr of map.values()) arr.sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
     return map;
   }, [lessons]);
 
-  // Monta a grade de 6 semanas (42 células), incluindo dias dos meses vizinhos.
   const cells = useMemo(() => {
-    const year = cursor.getFullYear();
-    const month = cursor.getMonth();
-    const start = new Date(year, month, 1);
-    start.setDate(1 - start.getDay()); // volta até o domingo
+    const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    start.setDate(1 - start.getDay());
     return Array.from({ length: 42 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
@@ -73,129 +75,220 @@ export default function ScheduleView({
     });
   }, [cursor]);
 
-  const selectedLessons = byDay.get(dayKey(selected)) ?? [];
-
   function goMonth(delta: number) {
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
+    setPopup(null);
   }
   function goToday() {
     const t = new Date();
     setCursor(new Date(t.getFullYear(), t.getMonth(), 1));
-    setSelected(t);
+    setPopup(null);
   }
-  function pickDay(d: Date) {
-    setSelected(d);
+
+  function openDay(d: Date, e: React.MouseEvent) {
     if (d.getMonth() !== cursor.getMonth()) setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+    const pad = 12;
+    const w = 280, h = 320;
+    const x = Math.min(e.clientX, window.innerWidth - w - pad);
+    const y = Math.min(e.clientY, window.innerHeight - h - pad);
+    setPopup({ date: d, x: Math.max(pad, x), y: Math.max(pad, y) });
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold capitalize">{MONTHS[cursor.getMonth()]} {cursor.getFullYear()}</h1>
-        </div>
+        <h1 className="text-2xl font-semibold capitalize">{MONTHS[cursor.getMonth()]} {cursor.getFullYear()}</h1>
         <div className="flex items-center gap-2">
           <button onClick={goToday} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-surface transition-colors">Hoje</button>
           <button onClick={() => goMonth(-1)} aria-label="Mês anterior" className="rounded-lg border border-border p-1.5 hover:bg-surface transition-colors"><ChevronLeft size={18} /></button>
           <button onClick={() => goMonth(1)} aria-label="Próximo mês" className="rounded-lg border border-border p-1.5 hover:bg-surface transition-colors"><ChevronRight size={18} /></button>
           {isTeacher && (
-            <button onClick={() => setDialogOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 text-sm font-medium transition-colors">
+            <button onClick={() => setDialogDate(today)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 text-sm font-medium transition-colors">
               <Plus size={16} /> Nova aula
             </button>
           )}
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Calendário */}
-        <div className="lg:col-span-2 bg-surface border border-border rounded-xl overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-border">
-            {WEEKDAYS.map((w) => (
-              <div key={w} className="px-2 py-2 text-center text-xs font-medium text-muted">{w}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {cells.map((d, i) => {
-              const inMonth = d.getMonth() === cursor.getMonth();
-              const isToday = sameDay(d, today);
-              const isSelected = sameDay(d, selected);
-              const dayLessons = byDay.get(dayKey(d)) ?? [];
-              return (
-                <button
-                  key={i}
-                  onClick={() => pickDay(d)}
-                  className={`min-h-[84px] border-b border-r border-border p-1.5 text-left align-top transition-colors ${
-                    inMonth ? "" : "bg-background/50 text-muted"
-                  } ${isSelected ? "ring-2 ring-inset ring-indigo-500" : "hover:bg-background"}`}
-                >
-                  <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                    isToday ? "bg-indigo-600 text-white font-semibold" : ""
-                  }`}>
-                    {d.getDate()}
-                  </span>
-                  <div className="mt-1 space-y-0.5">
-                    {dayLessons.slice(0, 3).map((l) => (
-                      <div key={l.id} className="flex items-center gap-1 truncate text-[11px]">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS[l.status]?.dot ?? "bg-blue-500"}`} />
+      {/* Calendário full-width */}
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-border">
+          {WEEKDAYS_SHORT.map((w) => (
+            <div key={w} className="px-2 py-2.5 text-center text-xs font-medium text-muted">{w}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {cells.map((d, i) => {
+            const inMonth = d.getMonth() === cursor.getMonth();
+            const isToday = sameDay(d, today);
+            const dayLessons = byDay.get(dayKey(d)) ?? [];
+            return (
+              <button
+                key={i}
+                onClick={(e) => openDay(d, e)}
+                className={`min-h-[7.5rem] border-b border-r border-border p-2 text-left align-top transition-colors last:border-r-0 ${
+                  inMonth ? "" : "bg-background/40 text-muted"
+                } hover:bg-background`}
+              >
+                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+                  isToday ? "bg-indigo-600 text-white font-semibold" : ""
+                }`}>
+                  {d.getDate()}
+                </span>
+                <div className="mt-1 space-y-1">
+                  {dayLessons.slice(0, 4).map((l) => {
+                    const st = STATUS[l.status] ?? STATUS.scheduled;
+                    return (
+                      <div key={l.id} className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs truncate ${st.chip}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${st.dot}`} />
                         <span className="truncate">{new Date(l.scheduled_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} {l.title}</span>
                       </div>
-                    ))}
-                    {dayLessons.length > 3 && <div className="text-[11px] text-muted">+{dayLessons.length - 3} mais</div>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Agenda do dia selecionado */}
-        <div className="space-y-3">
-          <h2 className="font-semibold capitalize">
-            {selected.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-          </h2>
-          {selectedLessons.length === 0 ? (
-            <p className="text-sm text-muted">Nenhuma aula neste dia.</p>
-          ) : (
-            <ul className="space-y-2">
-              {selectedLessons.map((l) => {
-                const dt = new Date(l.scheduled_at);
-                const st = STATUS[l.status] ?? STATUS.scheduled;
-                return (
-                  <li key={l.id} className="bg-surface border border-border rounded-lg p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium truncate">{l.title}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${st.chip}`}>{st.label}</span>
-                    </div>
-                    <p className="text-xs text-muted mt-1 flex items-center gap-1">
-                      <Clock size={12} /> {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {l.duration_minutes} min
-                    </p>
-                    <p className="text-xs text-muted truncate">com {l.teacherName} / {l.studentName}</p>
-                    <Link href={`/app/lessons/${l.id}`} className="mt-2 inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-                      <Video size={14} /> {l.status === "completed" ? "Ver aula" : "Entrar"}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                    );
+                  })}
+                  {dayLessons.length > 4 && <div className="text-xs text-muted pl-1">+{dayLessons.length - 4} mais</div>}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {dialogOpen && (
+      {/* Popup do dia */}
+      {popup && (
+        <DayPopup
+          popup={popup}
+          lessons={byDay.get(dayKey(popup.date)) ?? []}
+          isTeacher={isTeacher}
+          onClose={() => setPopup(null)}
+          onNew={() => { setDialogDate(popup.date); setPopup(null); }}
+        />
+      )}
+
+      {dialogDate && (
         <LessonDialog
           students={students}
-          initialDate={selected}
-          onClose={() => setDialogOpen(false)}
+          initialDate={dialogDate}
+          onClose={() => setDialogDate(null)}
         />
       )}
     </div>
   );
 }
 
+function DayPopup({
+  popup, lessons, isTeacher, onClose, onNew,
+}: {
+  popup: Popup;
+  lessons: Lesson[];
+  isTeacher: boolean;
+  onClose: () => void;
+  onNew: () => void;
+}) {
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        className="fixed z-50 w-72 max-w-[18rem] bg-surface border border-border rounded-xl shadow-xl"
+        style={{ left: popup.x, top: popup.y }}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <p className="text-sm font-medium capitalize">
+            {popup.date.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" })}
+          </p>
+          <button onClick={onClose} aria-label="Fechar" className="text-muted hover:text-foreground"><X size={16} /></button>
+        </div>
+        <div className="max-h-56 overflow-y-auto p-2 space-y-1">
+          {lessons.length === 0 ? (
+            <p className="text-sm text-muted px-2 py-3">Sem aulas neste dia.</p>
+          ) : (
+            lessons.map((l) => {
+              const dt = new Date(l.scheduled_at);
+              const st = STATUS[l.status] ?? STATUS.scheduled;
+              return (
+                <Link key={l.id} href={`/app/lessons/${l.id}`} className="block rounded-lg p-2 hover:bg-background transition-colors">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium truncate">{l.title}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${st.chip}`}>{st.label}</span>
+                  </div>
+                  <span className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                    <Clock size={11} /> {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {l.duration_minutes} min
+                  </span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+        {isTeacher && (
+          <div className="p-2 border-t border-border">
+            <button onClick={onNew} className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 text-sm font-medium transition-colors">
+              <Plus size={16} /> Nova aula
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+type Frequency = "daily" | "3x_week" | "weekly" | "monthly" | "custom";
+
+const FREQ_LABEL: Record<Frequency, string> = {
+  daily: "Todos os dias",
+  "3x_week": "3 vezes na semana",
+  weekly: "1 vez na semana",
+  monthly: "1 vez no mês",
+  custom: "Personalizado",
+};
+
+/** Gera as datas da recorrência a partir da data base. */
+function generateDates(base: Date, freq: Frequency, weekdays: number[], everyWeeks: number, count: number): Date[] {
+  const out: Date[] = [];
+  const cap = Math.min(Math.max(count, 1), 60);
+
+  if (freq === "daily") {
+    for (let i = 0; i < cap; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i); out.push(d);
+    }
+    return out;
+  }
+  if (freq === "weekly") {
+    for (let i = 0; i < cap; i++) {
+      const d = new Date(base); d.setDate(base.getDate() + i * 7); out.push(d);
+    }
+    return out;
+  }
+  if (freq === "monthly") {
+    for (let i = 0; i < cap; i++) {
+      const d = new Date(base); d.setMonth(base.getMonth() + i); out.push(d);
+    }
+    return out;
+  }
+  // baseadas em dias da semana: 3x_week (Seg/Qua/Sex) ou custom
+  const days = freq === "3x_week" ? [1, 3, 5] : [...weekdays].sort((a, b) => a - b);
+  if (days.length === 0) return [base];
+  const step = freq === "custom" ? Math.max(everyWeeks, 1) : 1;
+
+  // começa no domingo da semana da data base
+  const weekStart = new Date(base);
+  weekStart.setDate(base.getDate() - base.getDay());
+  let week = 0;
+  while (out.length < cap && week < 520) {
+    for (const wd of days) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + week * 7 * step + wd);
+      d.setHours(base.getHours(), base.getMinutes(), 0, 0);
+      if (d >= stripTime(base) && out.length < cap) out.push(d);
+    }
+    week++;
+  }
+  return out.sort((a, b) => a.getTime() - b.getTime());
+}
+function stripTime(d: Date) {
+  const x = new Date(d); x.setHours(0, 0, 0, 0); return x;
+}
+
 function LessonDialog({
-  students,
-  initialDate,
-  onClose,
+  students, initialDate, onClose,
 }: {
   students: { id: string; full_name: string }[];
   initialDate: Date;
@@ -209,16 +302,33 @@ function LessonDialog({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Modo calendário: data fixa do dia escolhido + horário (time)
   const [date, setDate] = useState(dayKey(initialDate));
   const [time, setTime] = useState("09:00");
-  // Modo manual: datetime-local digitado
   const [manual, setManual] = useState(`${dayKey(initialDate)}T09:00`);
 
-  function resolveISO(): string | null {
+  // Recorrência
+  const [recurring, setRecurring] = useState(false);
+  const [freq, setFreq] = useState<Frequency>("weekly");
+  const [weekdays, setWeekdays] = useState<number[]>([initialDate.getDay()]);
+  const [everyWeeks, setEveryWeeks] = useState(1);
+  const [count, setCount] = useState(4);
+
+  function baseDate(): Date | null {
     const str = manualMode ? manual : `${date}T${time}`;
     const d = new Date(str);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const dates = useMemo(() => {
+    const b = baseDate();
+    if (!b) return [];
+    if (!recurring) return [b];
+    return generateDates(b, freq, weekdays, everyWeeks, count);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recurring, freq, weekdays, everyWeeks, count, date, time, manual, manualMode]);
+
+  function toggleWeekday(wd: number) {
+    setWeekdays((prev) => prev.includes(wd) ? prev.filter((x) => x !== wd) : [...prev, wd]);
   }
 
   async function submit(e: React.FormEvent) {
@@ -226,20 +336,23 @@ function LessonDialog({
     setError(null);
     if (!title.trim()) return setError("Informe o título da aula.");
     if (!studentId) return setError("Selecione um aluno.");
-    const iso = resolveISO();
-    if (!iso) return setError("Data/hora inválida.");
+    if (dates.length === 0) return setError("Data/hora inválida.");
 
     setLoading(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
-    const { error } = await supabase.from("lessons").insert({
+
+    const group = recurring && dates.length > 1 ? crypto.randomUUID() : null;
+    const rows = dates.map((d) => ({
       teacher_id: user.id,
       student_id: studentId,
       title: title.trim(),
-      scheduled_at: iso,
+      scheduled_at: d.toISOString(),
       duration_minutes: duration,
-    });
+      recurrence_group: group,
+    }));
+    const { error } = await supabase.from("lessons").insert(rows);
     setLoading(false);
     if (error) return setError(error.message);
     onClose();
@@ -250,8 +363,8 @@ function LessonDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md bg-surface border border-border rounded-xl shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+      <div className="w-full max-w-md bg-surface border border-border rounded-xl shadow-xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-surface">
           <h3 className="font-semibold">Nova aula</h3>
           <button onClick={onClose} aria-label="Fechar" className="text-muted hover:text-foreground"><X size={20} /></button>
         </div>
@@ -273,7 +386,7 @@ function LessonDialog({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium">Data e hora</label>
+                  <label className="text-sm font-medium">{recurring ? "Início" : "Data e hora"}</label>
                   <button type="button" onClick={() => setManualMode(!manualMode)} className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
                     {manualMode ? <><CalendarIcon size={13} /> Usar calendário</> : <><Keyboard size={13} /> Digitar data</>}
                   </button>
@@ -289,17 +402,70 @@ function LessonDialog({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Duração (min)</label>
+                <label className="block text-sm font-medium mb-1">Duração</label>
                 <select className={inputClass} value={duration} onChange={(e) => setDuration(parseInt(e.target.value))}>
                   {[30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m} min</option>)}
                 </select>
+              </div>
+
+              {/* Recorrência */}
+              <div className="rounded-lg border border-border p-3 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} className="h-4 w-4 accent-indigo-600" />
+                  <span className="text-sm font-medium">Repetir aula</span>
+                </label>
+
+                {recurring && (
+                  <div className="space-y-3 pl-1">
+                    <select className={inputClass} value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>
+                      {(Object.keys(FREQ_LABEL) as Frequency[]).map((f) => (
+                        <option key={f} value={f}>{FREQ_LABEL[f]}</option>
+                      ))}
+                    </select>
+
+                    {freq === "custom" && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted">Dias da semana</p>
+                        <div className="flex gap-1">
+                          {WEEKDAYS_MIN.map((w, idx) => (
+                            <button key={idx} type="button" onClick={() => toggleWeekday(idx)} title={WEEKDAYS[idx]}
+                              className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
+                                weekdays.includes(idx) ? "bg-indigo-600 text-white" : "border border-border hover:bg-background"
+                              }`}>
+                              {w}
+                            </button>
+                          ))}
+                        </div>
+                        <label className="flex items-center gap-2 text-sm">
+                          A cada
+                          <input type="number" min={1} max={12} value={everyWeeks} onChange={(e) => setEveryWeeks(parseInt(e.target.value) || 1)}
+                            className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-foreground" />
+                          semana(s)
+                        </label>
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 text-sm">
+                      Repetir
+                      <input type="number" min={1} max={60} value={count} onChange={(e) => setCount(parseInt(e.target.value) || 1)}
+                        className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-foreground" />
+                      vez(es)
+                    </label>
+
+                    <p className="text-xs text-muted">
+                      {dates.length > 0
+                        ? `Serão criadas ${dates.length} aula(s). Última: ${dates[dates.length - 1].toLocaleDateString("pt-BR")}.`
+                        : "Defina os parâmetros da recorrência."}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-background transition-colors">Cancelar</button>
                 <button disabled={loading} className="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-medium disabled:opacity-50 transition-colors">
-                  {loading ? "Agendando..." : "Agendar"}
+                  {loading ? "Agendando..." : recurring && dates.length > 1 ? `Agendar ${dates.length} aulas` : "Agendar"}
                 </button>
               </div>
             </>

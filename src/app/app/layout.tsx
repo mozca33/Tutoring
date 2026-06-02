@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           density={density}
         />
         <main className="flex-1 min-w-0">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">{children}</div>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">{children}</div>
         </main>
       </div>
     </PreferencesProvider>
