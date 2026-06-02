@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -49,10 +49,17 @@ export default function ScheduleView({
   students: { id: string; full_name: string }[];
   isTeacher: boolean;
 }) {
+  const router = useRouter();
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [popup, setPopup] = useState<Popup | null>(null);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
+
+  // Atualiza periodicamente para mostrar aulas novas (ex.: o professor agendou).
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 30000);
+    return () => clearInterval(id);
+  }, [router]);
 
   const byDay = useMemo(() => {
     const map = new Map<string, Lesson[]>();

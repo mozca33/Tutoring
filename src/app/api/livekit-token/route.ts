@@ -13,12 +13,26 @@ export async function GET(request: Request) {
 
   const { data: lesson, error } = await supabase
     .from("lessons")
-    .select("id, room_name, teacher_id, student_id, title")
+    .select("id, room_name, teacher_id, student_id, title, scheduled_at, duration_minutes, status")
     .eq("id", lessonId)
     .single();
   if (error || !lesson) return NextResponse.json({ error: "lesson not found" }, { status: 404 });
   if (lesson.teacher_id !== user.id && lesson.student_id !== user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  // Janela de entrada: 10 min antes até 30 min após o término.
+  const start = new Date(lesson.scheduled_at).getTime();
+  const end = start + lesson.duration_minutes * 60 * 1000;
+  const now = Date.now();
+  if (lesson.status === "cancelled" || lesson.status === "completed") {
+    return NextResponse.json({ error: "Esta aula não está mais disponível." }, { status: 403 });
+  }
+  if (now < start - 10 * 60 * 1000) {
+    return NextResponse.json({ error: "A sala ainda não abriu (abre 10 min antes do horário)." }, { status: 403 });
+  }
+  if (now > end + 30 * 60 * 1000) {
+    return NextResponse.json({ error: "Esta aula já terminou." }, { status: 403 });
   }
 
   const { data: profile } = await supabase

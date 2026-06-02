@@ -63,6 +63,18 @@ body {
   }
 }
 
+/* Chat do LiveKit usa tema escuro próprio (data-lk-theme="default").
+   Forçamos texto legível no input independentemente do tema do app. */
+.lk-chat-form-input,
+.lk-chat-form input {
+  color: #f1f5f9;
+  background-color: #1f2937;
+  border-color: #374151;
+}
+.lk-chat-form-input::placeholder {
+  color: #94a3b8;
+}
+
 /* Remapeamento de cores fixas para o tema escuro.
    Evita editar dezenas de componentes: sob .dark, as utilities fixas
    passam a usar os tokens semânticos. Maior especificidade vence. */

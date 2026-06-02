@@ -79,7 +79,12 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         )}
       </div>
 
-      <LessonRoom lessonId={lesson.id} />
+      <LessonRoom
+        lessonId={lesson.id}
+        scheduledAt={lesson.scheduled_at}
+        durationMinutes={lesson.duration_minutes}
+        status={lesson.status}
+      />
 
       <div className="grid md:grid-cols-2 gap-6">
         <section className="bg-white border rounded-xl p-6">
