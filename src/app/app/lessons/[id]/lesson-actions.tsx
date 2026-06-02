@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, CalendarX, Trash2, CheckCircle2, X } from "lucide-react";
+import { Pencil, CalendarX, Trash2, CheckCircle2, X, SlidersHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LessonActions({
@@ -20,6 +20,7 @@ export default function LessonActions({
   };
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description ?? "");
@@ -54,6 +55,7 @@ export default function LessonActions({
       .update({ status: "completed", summary: summary || null }).eq("id", lessonId);
     setCompleting(false);
     if (error) return alert(error.message);
+    setOpen(false);
     router.refresh();
   }
 
@@ -61,6 +63,7 @@ export default function LessonActions({
     if (!confirm("Cancelar essa aula? O aluno continuará vendo, mas marcada como cancelada.")) return;
     const { error } = await createClient().from("lessons").update({ status: "cancelled" }).eq("id", lessonId);
     if (error) return alert(error.message);
+    setOpen(false);
     router.refresh();
   }
 
@@ -72,9 +75,8 @@ export default function LessonActions({
     router.refresh();
   }
 
-  if (editing) {
-    return (
-      <div className="w-full sm:w-96 bg-surface border border-border rounded-xl p-4 space-y-3">
+  const editCard = (
+      <div className="w-80 max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-xl p-4 space-y-3 shadow-xl">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">Editar aula</h3>
           <button onClick={() => setEditing(false)} aria-label="Fechar" className="text-muted hover:text-foreground"><X size={18} /></button>
@@ -87,15 +89,15 @@ export default function LessonActions({
           <label className="text-xs font-medium text-muted">Descrição</label>
           <textarea className={inputClass} rows={2} placeholder="Opcional" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
-        <div className="flex gap-2">
-          <div className="space-y-1 flex-1">
-            <label className="text-xs font-medium text-muted">Data e hora</label>
-            <input type="datetime-local" className={inputClass} value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
-          </div>
-          <div className="space-y-1 w-24">
-            <label className="text-xs font-medium text-muted">Min</label>
-            <input type="number" min={15} step={15} className={inputClass} value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} />
-          </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted">Data e hora</label>
+          <input type="datetime-local" className={inputClass} value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted">Duração</label>
+          <select className={inputClass} value={duration} onChange={(e) => setDuration(parseInt(e.target.value))}>
+            {[30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m} minutos</option>)}
+          </select>
         </div>
         <div className="flex gap-2 pt-1">
           <button onClick={save} disabled={loading} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors">
@@ -105,10 +107,9 @@ export default function LessonActions({
         </div>
       </div>
     );
-  }
 
-  return (
-    <div className="w-full sm:w-80 bg-surface border border-border rounded-xl p-4 space-y-4">
+  const actionsCard = (
+    <div className="w-80 max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-xl p-4 space-y-4 shadow-xl">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm">Ações da aula</h3>
         <span className="text-xs text-muted">Professor</span>
@@ -146,6 +147,27 @@ export default function LessonActions({
             {completing ? "Salvando..." : "Marcar como concluída"}
           </button>
         </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Ações da aula"
+        title="Ações da aula"
+        className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-border text-foreground hover:bg-surface transition-colors"
+      >
+        <SlidersHorizontal size={18} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => { setOpen(false); setEditing(false); }} />
+          <div className="absolute right-0 top-full mt-2 z-40">
+            {editing ? editCard : actionsCard}
+          </div>
+        </>
       )}
     </div>
   );
