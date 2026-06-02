@@ -13,8 +13,6 @@ export const ALLOWED_EXTENSIONS = [
   "mp3", "wav", "m4a", "ogg",
   // Vídeo
   "mp4", "webm", "mov",
-  // Compactados
-  "zip",
 ] as const;
 
 // String para o atributo `accept` do <input type="file">
@@ -30,7 +28,7 @@ export function validateUpload(file: File): { ok: boolean; error?: string } {
   if (!ext || !(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
     return {
       ok: false,
-      error: "Tipo de arquivo não permitido. Aceitos: documentos, imagens, áudio, vídeo e .zip.",
+      error: "Tipo de arquivo não permitido. Aceitos: documentos, imagens, áudio e vídeo.",
     };
   }
   if (file.size > MAX_UPLOAD_BYTES) {
