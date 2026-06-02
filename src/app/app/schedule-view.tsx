@@ -75,6 +75,14 @@ export default function ScheduleView({
     });
   }, [cursor]);
 
+  const upcoming = useMemo(() => {
+    const now = Date.now();
+    return lessons
+      .filter((l) => l.status !== "cancelled" && l.status !== "completed" && new Date(l.scheduled_at).getTime() >= now - 3600_000)
+      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+      .slice(0, 12);
+  }, [lessons]);
+
   function goMonth(delta: number) {
     setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + delta, 1));
     setPopup(null);
@@ -110,8 +118,9 @@ export default function ScheduleView({
         </div>
       </div>
 
+      <div className="flex flex-col xl:flex-row gap-5">
       {/* Calendário full-width */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="flex-1 min-w-0 bg-surface border border-border rounded-xl overflow-hidden">
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS_SHORT.map((w) => (
             <div key={w} className="px-2 py-2.5 text-center text-xs font-medium text-muted">{w}</div>
@@ -151,6 +160,36 @@ export default function ScheduleView({
             );
           })}
         </div>
+      </div>
+
+      {/* Lista lateral: próximas aulas */}
+      <aside className="xl:w-80 shrink-0 bg-surface border border-border rounded-xl p-4">
+        <h2 className="font-semibold mb-3">Próximas aulas</h2>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-muted">Nenhuma aula agendada.</p>
+        ) : (
+          <ul className="space-y-2 max-h-[32rem] overflow-y-auto">
+            {upcoming.map((l) => {
+              const dt = new Date(l.scheduled_at);
+              const st = STATUS[l.status] ?? STATUS.scheduled;
+              return (
+                <li key={l.id}>
+                  <Link href={`/app/lessons/${l.id}`} className="block rounded-lg border border-border p-3 hover:bg-background transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{l.title}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${st.chip}`}>{st.label}</span>
+                    </div>
+                    <span className="text-xs text-muted flex items-center gap-1 mt-1 capitalize">
+                      <Clock size={12} /> {dt.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" })}, {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="text-xs text-muted truncate block">com {l.studentName}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </aside>
       </div>
 
       {/* Popup do dia */}
