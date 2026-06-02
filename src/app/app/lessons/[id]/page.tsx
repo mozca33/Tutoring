@@ -37,7 +37,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
       .select("id, file_name, storage_path, size_bytes, mime_type, uploader_id, created_at")
       .eq("lesson_id", id).order("created_at", { ascending: false }),
     supabase.from("homeworks")
-      .select("id, title, instructions, due_at, submitted_at, submission_text, grade, feedback, teacher_id, student_id")
+      .select("id, title, instructions, due_at, submitted_at, submission_text, submission_file_path, submission_file_name, grade, feedback, teacher_id, student_id")
       .eq("lesson_id", id).order("created_at", { ascending: false }),
   ]);
 

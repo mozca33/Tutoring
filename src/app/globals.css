@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
+/* Dark mode controlado por classe .dark no <html> (não pelo SO) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;   /* slate-50 */
+  --surface: #ffffff;
+  --foreground: #0f172a;   /* slate-900 */
+  --muted: #475569;        /* slate-600 */
+  --placeholder: #64748b;  /* slate-500 — legível */
+  --border: #e2e8f0;       /* slate-200 */
+}
+
+.dark {
+  --background: #0b1120;   /* slate-950-ish */
+  --surface: #1e293b;      /* slate-800 */
+  --foreground: #f1f5f9;   /* slate-100 */
+  --muted: #94a3b8;        /* slate-400 */
+  --placeholder: #94a3b8;  /* slate-400 — legível no escuro */
+  --border: #334155;       /* slate-700 */
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Densidade do layout — escala todo o UI via font-size raiz (Tailwind usa rem) */
+html { font-size: 16px; }
+html[data-density="small"] { font-size: 14px; }
+html[data-density="medium"] { font-size: 16px; }
+html[data-density="large"] { font-size: 18px; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Transição suave ao trocar de tema */
+.theme-anim,
+.theme-anim * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Inputs legíveis em ambos os temas + placeholders com bom contraste */
+@layer base {
+  input,
+  textarea,
+  select {
+    color: var(--foreground);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--placeholder);
+    opacity: 1; /* Firefox baixa a opacidade por padrão */
+  }
+}
+
+/* Remapeamento de cores fixas para o tema escuro.
+   Evita editar dezenas de componentes: sob .dark, as utilities fixas
+   passam a usar os tokens semânticos. Maior especificidade vence. */
+.dark .bg-white { background-color: var(--surface); }
+.dark .bg-slate-50 { background-color: var(--background); }
+.dark .bg-slate-100 { background-color: #334155; }   /* slate-700 */
+.dark .bg-slate-200 { background-color: #475569; }   /* slate-600 */
+.dark .bg-indigo-50 { background-color: #312e81; }   /* indigo-900 */
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700 { color: var(--foreground); }
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400 { color: var(--muted); }
+.dark .text-indigo-700 { color: #a5b4fc; }            /* indigo-300 */
+
+.dark .border-slate-200,
+.dark .border-slate-100 { border-color: var(--border); }
+/* Bordas declaradas só com `border` (cor padrão do tema) */
+.dark .border { border-color: var(--border); }
+.dark .divide-y > * { border-color: var(--border); }

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import SignOutButton from "./sign-out-button";
-import MobileMenu from "./mobile-menu";
+import Sidebar from "./sidebar";
+import PreferencesProvider from "./preferences-provider";
+import type { Theme, Density } from "@/lib/preferences";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -11,39 +11,27 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, avatar_url, theme, density")
     .eq("id", user.id)
     .single();
 
-  const navLinks = [
-    { href: "/app", label: "Aulas" },
-    { href: "/app/chat", label: "Mensagens" },
-    { href: "/app/contatos", label: "Contatos" },
-    { href: "/app/perfil", label: "Perfil" },
-  ];
+  const theme = (profile?.theme ?? "system") as Theme;
+  const density = (profile?.density ?? "medium") as Density;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/app" className="font-semibold text-indigo-700 text-lg">Tutoring</Link>
-            <nav className="hidden sm:flex gap-4 text-sm text-slate-700">
-              {navLinks.map((l) => (
-                <Link key={l.href} href={l.href} className="hover:text-indigo-600 transition-colors">{l.label}</Link>
-              ))}
-            </nav>
-          </div>
-          <div className="hidden sm:flex items-center gap-4 text-sm">
-            <span className="text-slate-600">
-              {profile?.full_name} · <span className="text-indigo-600">{profile?.role === "teacher" ? "Professor" : "Aluno"}</span>
-            </span>
-            <SignOutButton />
-          </div>
-          <MobileMenu name={profile?.full_name ?? ""} role={profile?.role ?? "student"} links={navLinks} />
-        </div>
-      </header>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">{children}</main>
-    </div>
+    <PreferencesProvider theme={theme} density={density}>
+      <div className="min-h-screen bg-background text-foreground lg:flex">
+        <Sidebar
+          name={profile?.full_name ?? ""}
+          role={profile?.role ?? "student"}
+          avatarUrl={profile?.avatar_url ?? null}
+          theme={theme}
+          density={density}
+        />
+        <main className="flex-1 min-w-0">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">{children}</div>
+        </main>
+      </div>
+    </PreferencesProvider>
   );
 }

@@ -11,6 +11,8 @@ type Homework = {
   due_at: string | null;
   submitted_at: string | null;
   submission_text: string | null;
+  submission_file_path: string | null;
+  submission_file_name: string | null;
   grade: string | null;
   feedback: string | null;
   teacher_id: string;
@@ -103,12 +105,70 @@ function HomeworkItem({
   const [submission, setSubmission] = useState(hw.submission_text ?? "");
   const [grade, setGrade] = useState(hw.grade ?? "");
   const [feedback, setFeedback] = useState(hw.feedback ?? "");
+  const [uploading, setUploading] = useState(false);
 
   async function submit() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("homeworks")
       .update({ submission_text: submission, submitted_at: new Date().toISOString() })
+      .eq("id", hw.id)
+      .select().single();
+    if (error || !data) return alert(error?.message);
+    onChange(data as Homework);
+    router.refresh();
+  }
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const supabase = createClient();
+
+    // Remove arquivo anterior, se houver
+    if (hw.submission_file_path) {
+      await supabase.storage.from("lesson-files").remove([hw.submission_file_path]);
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `homework/${hw.id}/${crypto.randomUUID()}_${safeName}`;
+    const { error: upErr } = await supabase.storage.from("lesson-files").upload(path, file);
+    if (upErr) { setUploading(false); e.target.value = ""; return alert(upErr.message); }
+
+    const { data, error } = await supabase
+      .from("homeworks")
+      .update({
+        submission_file_path: path,
+        submission_file_name: file.name,
+        submitted_at: hw.submitted_at ?? new Date().toISOString(),
+      })
+      .eq("id", hw.id)
+      .select().single();
+    setUploading(false);
+    e.target.value = "";
+    if (error || !data) return alert(error?.message);
+    onChange(data as Homework);
+    router.refresh();
+  }
+
+  async function downloadFile() {
+    if (!hw.submission_file_path) return;
+    const supabase = createClient();
+    const { data, error } = await supabase.storage
+      .from("lesson-files")
+      .createSignedUrl(hw.submission_file_path, 60);
+    if (error || !data) return alert("Erro ao gerar link");
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function removeFile() {
+    if (!hw.submission_file_path) return;
+    if (!confirm("Remover o arquivo anexado?")) return;
+    const supabase = createClient();
+    await supabase.storage.from("lesson-files").remove([hw.submission_file_path]);
+    const { data, error } = await supabase
+      .from("homeworks")
+      .update({ submission_file_path: null, submission_file_name: null })
       .eq("id", hw.id)
       .select().single();
     if (error || !data) return alert(error?.message);
@@ -150,16 +210,33 @@ function HomeworkItem({
           <p className="text-xs font-medium text-slate-600">Sua resposta</p>
           <textarea className="w-full border rounded-lg px-3 py-2" rows={3}
             value={submission} onChange={(e) => setSubmission(e.target.value)} />
-          <button onClick={submit} className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm">
-            {hw.submitted_at ? "Atualizar entrega" : "Entregar"}
-          </button>
+          {hw.submission_file_path ? (
+            <div className="flex items-center gap-3 text-sm">
+              <button onClick={downloadFile} className="text-indigo-600 hover:underline">📎 {hw.submission_file_name}</button>
+              <button onClick={removeFile} className="text-red-600 hover:underline">Remover</button>
+            </div>
+          ) : null}
+          <div className="flex items-center gap-2">
+            <button onClick={submit} className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm">
+              {hw.submitted_at ? "Atualizar entrega" : "Entregar"}
+            </button>
+            <label className="inline-block">
+              <span className="inline-block border border-indigo-600 text-indigo-600 px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-indigo-50">
+                {uploading ? "Enviando..." : hw.submission_file_path ? "Trocar arquivo" : "Anexar arquivo"}
+              </span>
+              <input type="file" className="hidden" onChange={onFileChange} disabled={uploading} />
+            </label>
+          </div>
         </div>
       )}
 
-      {!isStudent && hw.submission_text && (
-        <div className="bg-slate-50 p-3 rounded">
-          <p className="text-xs font-medium text-slate-600 mb-1">Resposta do aluno</p>
-          <p className="text-sm whitespace-pre-wrap">{hw.submission_text}</p>
+      {!isStudent && (hw.submission_text || hw.submission_file_path) && (
+        <div className="bg-slate-50 p-3 rounded space-y-2">
+          <p className="text-xs font-medium text-slate-600">Resposta do aluno</p>
+          {hw.submission_text && <p className="text-sm whitespace-pre-wrap">{hw.submission_text}</p>}
+          {hw.submission_file_path && (
+            <button onClick={downloadFile} className="text-indigo-600 hover:underline text-sm">📎 {hw.submission_file_name}</button>
+          )}
         </div>
       )}
 
