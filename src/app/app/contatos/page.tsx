@@ -15,7 +15,7 @@ export default async function ContatosPage() {
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", user.id).single();
+    .from("profiles").select("role, teacher_code").eq("id", user.id).single();
   const isTeacher = profile?.role === "teacher";
 
   const { data: rels } = await supabase
@@ -35,12 +35,21 @@ export default async function ContatosPage() {
       </header>
 
       {isTeacher && (
-        <section className="bg-surface border border-border rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-3">Adicionar aluno</h2>
-          <AddContactForm />
-          <p className="text-xs text-muted mt-2">
-            Informe o e-mail de alguém que já tenha conta. Pode ser um aluno ou outro professor.
-          </p>
+        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-1">Seu código de professor</h2>
+            <p className="text-sm text-muted mb-2">Compartilhe com seus alunos: eles se cadastram informando este código.</p>
+            <div className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2">
+              <span className="font-mono text-xl tracking-[0.3em] font-semibold text-indigo-700 dark:text-indigo-300">{profile?.teacher_code ?? "—"}</span>
+            </div>
+          </div>
+          <div className="border-t border-border pt-4">
+            <h3 className="font-medium mb-2">Adicionar aluno por e-mail</h3>
+            <AddContactForm />
+            <p className="text-xs text-muted mt-2">
+              Alternativa ao código: informe o e-mail de alguém que já tenha conta (aluno ou outro professor).
+            </p>
+          </div>
         </section>
       )}
 
