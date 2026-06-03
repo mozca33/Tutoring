@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BookOpen, CalendarClock, CalendarX, CheckCircle2 } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarX, CheckCircle2, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Message = {
@@ -79,7 +79,11 @@ export default function ChatWindow({
   const [sending, setSending] = useState(false);
   const [lessons, setLessons] = useState<LessonRef[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  function toggle(key: string) { setCollapsed((p) => ({ ...p, [key]: !p[key] })); }
+  const lessonTitle = (id?: string | null) => lessons.find((l) => l.id === id)?.title ?? "Aula";
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -141,35 +145,63 @@ export default function ChatWindow({
     setText("");
   }
 
-  // Monta a timeline com separadores de data
-  const rows: React.ReactNode[] = [];
-  let lastDay = "";
-  for (const m of messages) {
-    const day = dayLabel(m.created_at);
-    if (day !== lastDay) {
-      rows.push(<p key={`d-${m.id}`} className="text-center text-xs text-muted my-3">{day}</p>);
-      lastDay = day;
-    }
-    if (m.kind === "event") {
-      rows.push(<EventCard key={m.id} m={m} />);
-    } else {
-      const mine = m.sender_id === currentUserId;
-      rows.push(
-        <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-          <div className={`max-w-md px-3 py-2 rounded-2xl ${mine ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900"}`}>
-            <p className="whitespace-pre-wrap break-words">{renderContent(m.content, mine)}</p>
-            <p className={`text-[10px] mt-1 ${mine ? "text-indigo-100" : "text-slate-500"}`}>{hhmm(m.created_at)}</p>
-          </div>
-        </div>,
-      );
-    }
+  function renderItem(m: Message) {
+    if (m.kind === "event") return <EventCard key={m.id} m={m} />;
+    const mine = m.sender_id === currentUserId;
+    return (
+      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+        <div className={`max-w-md px-3 py-2 rounded-2xl ${mine ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900"}`}>
+          <p className="whitespace-pre-wrap break-words">{renderContent(m.content, mine)}</p>
+          <p className={`text-[10px] mt-1 ${mine ? "text-indigo-100" : "text-slate-500"}`}>{hhmm(m.created_at)}</p>
+        </div>
+      </div>
+    );
   }
+
+  // Agrupa em blocos: por DIA (mensagens normais + eventos) e por AULA (chat da aula ao vivo)
+  type Block = { key: string; kind: "day" | "lesson"; label: string; items: Message[] };
+  const blocks: Block[] = [];
+  const idx: Record<string, number> = {};
+  for (const m of messages) {
+    const isLessonChat = m.kind !== "event" && !!m.lesson_id;
+    const key = isLessonChat ? `lesson:${m.lesson_id}` : `day:${dayLabel(m.created_at)}`;
+    if (idx[key] === undefined) {
+      idx[key] = blocks.length;
+      blocks.push({ key, kind: isLessonChat ? "lesson" : "day", label: isLessonChat ? lessonTitle(m.lesson_id) : dayLabel(m.created_at), items: [] });
+    }
+    blocks[idx[key]].items.push(m);
+  }
+  // Aula recolhida por padrão; dia expandido.
+  const isCollapsed = (b: Block) => (b.key in collapsed ? collapsed[b.key] : b.kind === "lesson");
 
   return (
     <div className="bg-surface border border-border rounded-xl flex flex-col" style={{ height: "65vh" }}>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.length === 0 && <p className="text-muted text-center mt-8">Nenhuma mensagem. Diga olá!</p>}
-        {rows}
+        {blocks.map((b) => {
+          const col = isCollapsed(b);
+          if (b.kind === "lesson") {
+            return (
+              <div key={b.key} className="border border-border rounded-lg my-2 overflow-hidden">
+                <button onClick={() => toggle(b.key)} className="w-full flex items-center gap-1.5 px-3 py-2 text-sm bg-background hover:bg-surface transition-colors">
+                  {col ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+                  <MessageSquare size={14} className="text-indigo-600 dark:text-indigo-400" />
+                  <span className="font-medium truncate">Chat da aula: {b.label}</span>
+                  <span className="text-xs text-muted ml-auto">{b.items.length}</span>
+                </button>
+                {!col && <div className="p-3 space-y-2">{b.items.map(renderItem)}</div>}
+              </div>
+            );
+          }
+          return (
+            <div key={b.key} className="my-1">
+              <button onClick={() => toggle(b.key)} className="mx-auto flex items-center gap-1 text-xs text-muted my-2 hover:text-foreground transition-colors">
+                {col ? <ChevronRight size={13} /> : <ChevronDown size={13} />} {b.label}
+              </button>
+              {!col && <div className="space-y-2">{b.items.map(renderItem)}</div>}
+            </div>
+          );
+        })}
       </div>
 
       <div className="relative">
