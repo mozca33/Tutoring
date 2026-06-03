@@ -15,7 +15,7 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
 
   const { data: messages } = await supabase
     .from("messages")
-    .select("id, sender_id, recipient_id, content, created_at")
+    .select("id, sender_id, recipient_id, content, created_at, kind, lesson_id, event_type, justification")
     .or(
       `and(sender_id.eq.${user.id},recipient_id.eq.${userId}),` +
       `and(sender_id.eq.${userId},recipient_id.eq.${user.id})`

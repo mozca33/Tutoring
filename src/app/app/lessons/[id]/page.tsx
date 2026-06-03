@@ -57,6 +57,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             </p>
             {lesson.status === "cancelled" && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Cancelada</span>}
             {lesson.status === "completed" && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Concluída</span>}
+            {lesson.status === "rescheduled" && <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">Remarcada</span>}
             {lesson.status === "live" && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Ao vivo</span>}
           </div>
           {lesson.description && <p className="text-slate-700 mt-2">{lesson.description}</p>}
@@ -70,6 +71,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         {isTeacher && (
           <LessonActions
             lessonId={lesson.id}
+            studentId={lesson.student_id}
             initial={{
               title: lesson.title,
               description: lesson.description,

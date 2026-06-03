@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, CalendarClock, CalendarX, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Message = {
@@ -11,19 +11,27 @@ type Message = {
   recipient_id: string;
   content: string;
   created_at: string;
+  kind?: string | null;
+  lesson_id?: string | null;
+  event_type?: string | null;
+  justification?: string | null;
 };
 
 type LessonRef = { id: string; title: string; scheduled_at: string };
 
 const MENTION_RE = /@\[([^\]]+)\]\(lesson:([0-9a-fA-F-]+)\)/g;
 
-// Renderiza o conteúdo transformando menções @[Título](lesson:id) em links.
+function hhmm(d: string) {
+  return new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function dayLabel(d: string) {
+  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 function renderContent(content: string, mine: boolean) {
   const parts: React.ReactNode[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
+  let last = 0; let m: RegExpExecArray | null; let key = 0;
   MENTION_RE.lastIndex = 0;
-  let key = 0;
   while ((m = MENTION_RE.exec(content))) {
     if (m.index > last) parts.push(content.slice(last, m.index));
     parts.push(
@@ -38,10 +46,27 @@ function renderContent(content: string, mine: boolean) {
   return parts;
 }
 
+function EventCard({ m }: { m: Message }) {
+  const icon = m.event_type === "completed" ? <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400" />
+    : m.event_type === "cancelled" ? <CalendarX size={15} className="text-amber-600 dark:text-amber-400" />
+    : <CalendarClock size={15} className="text-violet-600 dark:text-violet-400" />;
+  return (
+    <div className="my-2">
+      <Link href={`/app/lessons/${m.lesson_id}`}
+        className="flex items-start gap-2 border border-border rounded-lg px-3 py-2 bg-surface hover:bg-background transition-colors">
+        <span className="mt-0.5 shrink-0">{icon}</span>
+        <span className="text-sm font-medium">{m.content}</span>
+      </Link>
+      {m.justification && (
+        <p className="text-xs text-muted mt-1 pl-1"><span className="font-medium">Justificativa:</span> {m.justification}</p>
+      )}
+      <p className="text-[10px] text-muted pl-1 mt-0.5">{hhmm(m.created_at)}</p>
+    </div>
+  );
+}
+
 export default function ChatWindow({
-  currentUserId,
-  otherUserId,
-  initial,
+  currentUserId, otherUserId, initial,
 }: {
   currentUserId: string;
   otherUserId: string;
@@ -58,16 +83,13 @@ export default function ChatWindow({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  // Aulas em comum entre os dois usuários (para mencionar com @).
   useEffect(() => {
     const supabase = createClient();
     (async () => {
       const { data } = await supabase
-        .from("lessons")
-        .select("id, title, scheduled_at")
+        .from("lessons").select("id, title, scheduled_at")
         .or(`and(teacher_id.eq.${currentUserId},student_id.eq.${otherUserId}),and(teacher_id.eq.${otherUserId},student_id.eq.${currentUserId})`)
-        .order("scheduled_at", { ascending: false })
-        .returns<LessonRef[]>();
+        .order("scheduled_at", { ascending: false }).returns<LessonRef[]>();
       setLessons(data ?? []);
     })();
   }, [currentUserId, otherUserId]);
@@ -76,15 +98,14 @@ export default function ChatWindow({
     const supabase = createClient();
     const channel = supabase
       .channel(`messages:${[currentUserId, otherUserId].sort().join(":")}`)
-      .on("postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const m = payload.new as Message;
-          const inThisConvo =
+          const inConvo =
             (m.sender_id === currentUserId && m.recipient_id === otherUserId) ||
             (m.sender_id === otherUserId && m.recipient_id === currentUserId);
-          if (!inThisConvo) return;
-          setMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [...prev, m]));
+          if (!inConvo) return;
+          setMessages((prev) => prev.some((p) => p.id === m.id) ? prev : [...prev, m]);
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -95,15 +116,12 @@ export default function ChatWindow({
     const match = value.match(/@([^@]*)$/);
     setMentionQuery(match ? match[1].toLowerCase() : null);
   }
-
   function pickLesson(l: LessonRef) {
     setText((prev) => prev.replace(/@([^@]*)$/, `@[${l.title}](lesson:${l.id}) `));
     setMentionQuery(null);
   }
-
   const suggestions = mentionQuery !== null
-    ? lessons.filter((l) => l.title.toLowerCase().includes(mentionQuery)).slice(0, 6)
-    : [];
+    ? lessons.filter((l) => l.title.toLowerCase().includes(mentionQuery)).slice(0, 6) : [];
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -113,33 +131,43 @@ export default function ChatWindow({
     const { data, error } = await supabase
       .from("messages")
       .insert({ sender_id: currentUserId, recipient_id: otherUserId, content: text.trim() })
-      .select("id, sender_id, recipient_id, content, created_at")
+      .select("id, sender_id, recipient_id, content, created_at, kind, lesson_id, event_type, justification")
       .single();
     setSending(false);
     if (error || !data) return;
-    setMessages((prev) => (prev.some((p) => p.id === data.id) ? prev : [...prev, data]));
+    setMessages((prev) => prev.some((p) => p.id === data.id) ? prev : [...prev, data]);
     setText("");
+  }
+
+  // Monta a timeline com separadores de data
+  const rows: React.ReactNode[] = [];
+  let lastDay = "";
+  for (const m of messages) {
+    const day = dayLabel(m.created_at);
+    if (day !== lastDay) {
+      rows.push(<p key={`d-${m.id}`} className="text-center text-xs text-muted my-3">{day}</p>);
+      lastDay = day;
+    }
+    if (m.kind === "event") {
+      rows.push(<EventCard key={m.id} m={m} />);
+    } else {
+      const mine = m.sender_id === currentUserId;
+      rows.push(
+        <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+          <div className={`max-w-md px-3 py-2 rounded-2xl ${mine ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900"}`}>
+            <p className="whitespace-pre-wrap break-words">{renderContent(m.content, mine)}</p>
+            <p className={`text-[10px] mt-1 ${mine ? "text-indigo-100" : "text-slate-500"}`}>{hhmm(m.created_at)}</p>
+          </div>
+        </div>,
+      );
+    }
   }
 
   return (
     <div className="bg-surface border border-border rounded-xl flex flex-col" style={{ height: "65vh" }}>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
-        {messages.length === 0 && (
-          <p className="text-muted text-center mt-8">Nenhuma mensagem. Diga olá!</p>
-        )}
-        {messages.map((m) => {
-          const mine = m.sender_id === currentUserId;
-          return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-md px-3 py-2 rounded-2xl ${mine ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900"}`}>
-                <p className="whitespace-pre-wrap break-words">{renderContent(m.content, mine)}</p>
-                <p className={`text-[10px] mt-1 ${mine ? "text-indigo-100" : "text-slate-500"}`}>
-                  {new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+        {messages.length === 0 && <p className="text-muted text-center mt-8">Nenhuma mensagem. Diga olá!</p>}
+        {rows}
       </div>
 
       <div className="relative">
@@ -150,10 +178,8 @@ export default function ChatWindow({
               <button key={l.id} type="button" onClick={() => pickLesson(l)}
                 className="w-full text-left px-3 py-2 hover:bg-background transition-colors flex items-center gap-2">
                 <BookOpen size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-                <span className="min-w-0">
-                  <span className="block text-sm truncate">{l.title}</span>
-                  <span className="block text-xs text-muted">{new Date(l.scheduled_at).toLocaleDateString("pt-BR")}</span>
-                </span>
+                <span className="min-w-0"><span className="block text-sm truncate">{l.title}</span>
+                  <span className="block text-xs text-muted">{new Date(l.scheduled_at).toLocaleDateString("pt-BR")}</span></span>
               </button>
             ))}
           </div>
@@ -162,9 +188,7 @@ export default function ChatWindow({
           <input className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Mensagem… use @ para mencionar uma aula"
             value={text} onChange={(e) => onChange(e.target.value)} />
-          <button disabled={sending} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-colors">
-            Enviar
-          </button>
+          <button disabled={sending} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-colors">Enviar</button>
         </form>
       </div>
     </div>
