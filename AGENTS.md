@@ -4,6 +4,19 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# ⚠️ Manutenção obrigatória (SEMPRE)
+
+Ao atuar neste projeto e fazer **qualquer** alteração, mudança ou documentação, é **obrigatório** manter os arquivos correspondentes atualizados na mesma tarefa. SEMPRE:
+
+- **Mudança no banco** → aplicar a migration via MCP **e** salvar o `.sql` em `supabase/migrations/` (numeração sequencial).
+- **Feature/ajuste relevante** → adicionar entrada em `src/lib/changelog.ts` (mais recente no topo).
+- **Nova rota/componente/lib ou mudança estrutural** → atualizar `docs/PROJECT_STRUCTURE.md`.
+- **Decisão, estado ou pendência do projeto** → atualizar a memória da Claude (`project_tutoring.md`) e, quando existir, `docs/ROADMAP.md`.
+- **Nova env var** → registrar na seção de variáveis abaixo (e lembrar o usuário de adicioná-la na Vercel).
+- **Sempre** rodar o build/typecheck antes de commitar, e commitar com mensagem descritiva.
+
+Nunca deixe esses arquivos defasados em relação ao código.
+
 # Infraestrutura gerenciada
 
 Este projeto usa três serviços. O assistente gerencia os três:
