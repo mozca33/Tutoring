@@ -6,6 +6,7 @@ import LessonComments from "./lesson-comments";
 import LessonFiles from "./lesson-files";
 import LessonHomework from "./lesson-homework";
 import LessonActions from "./lesson-actions";
+import RecordingSection from "./recording-section";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,12 +16,13 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
 
   const { data: lesson } = await supabase
     .from("lessons")
-    .select("id, title, description, scheduled_at, duration_minutes, status, teacher_id, student_id, summary, teacher:teacher_id(full_name), student:student_id(full_name)")
+    .select("id, title, description, scheduled_at, duration_minutes, status, teacher_id, student_id, summary, recording_path, recording_status, teacher:teacher_id(full_name), student:student_id(full_name)")
     .eq("id", id)
     .single<{
       id: string; title: string; description: string | null;
       scheduled_at: string; duration_minutes: number; status: string;
       teacher_id: string; student_id: string; summary: string | null;
+      recording_path: string | null; recording_status: string | null;
       teacher: { full_name: string } | null;
       student: { full_name: string } | null;
     }>();
@@ -84,7 +86,13 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         scheduledAt={lesson.scheduled_at}
         durationMinutes={lesson.duration_minutes}
         status={lesson.status}
+        isTeacher={isTeacher}
+        recordingActive={lesson.recording_status === "recording"}
       />
+
+      {lesson.recording_path && lesson.recording_status === "done" && (
+        <RecordingSection path={lesson.recording_path} />
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         <section className="bg-white border rounded-xl p-6">

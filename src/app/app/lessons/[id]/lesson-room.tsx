@@ -15,11 +15,15 @@ export default function LessonRoom({
   scheduledAt,
   durationMinutes,
   status,
+  isTeacher = false,
+  recordingActive = false,
 }: {
   lessonId: string;
   scheduledAt: string;
   durationMinutes: number;
   status: string;
+  isTeacher?: boolean;
+  recordingActive?: boolean;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [wsUrl, setWsUrl] = useState<string | null>(null);
@@ -125,7 +129,7 @@ export default function LessonRoom({
           onError={onRoomError}
           style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
         >
-          <RoomControls />
+          <RoomControls lessonId={lessonId} isTeacher={isTeacher} initialRecording={recordingActive} />
           <div style={{ flex: 1, minHeight: 0 }}>
             <VideoConference />
           </div>
