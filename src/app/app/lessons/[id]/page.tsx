@@ -7,6 +7,7 @@ import LessonFiles from "./lesson-files";
 import LessonHomework from "./lesson-homework";
 import LessonActions from "./lesson-actions";
 import RecordingSection from "./recording-section";
+import LessonChat from "./lesson-chat";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,20 +69,28 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
-        {isTeacher && (
-          <LessonActions
+        <div className="flex items-center gap-2 shrink-0">
+          <LessonChat
             lessonId={lesson.id}
-            studentId={lesson.student_id}
-            initial={{
-              title: lesson.title,
-              description: lesson.description,
-              scheduled_at: lesson.scheduled_at,
-              duration_minutes: lesson.duration_minutes,
-              status: lesson.status,
-              summary: lesson.summary,
-            }}
+            currentUserId={user.id}
+            otherUserId={isTeacher ? lesson.student_id : lesson.teacher_id}
+            otherName={(isTeacher ? lesson.student?.full_name : lesson.teacher?.full_name) ?? "Contato"}
           />
-        )}
+          {isTeacher && (
+            <LessonActions
+              lessonId={lesson.id}
+              studentId={lesson.student_id}
+              initial={{
+                title: lesson.title,
+                description: lesson.description,
+                scheduled_at: lesson.scheduled_at,
+                duration_minutes: lesson.duration_minutes,
+                status: lesson.status,
+                summary: lesson.summary,
+              }}
+            />
+          )}
+        </div>
       </div>
 
       <LessonRoom
