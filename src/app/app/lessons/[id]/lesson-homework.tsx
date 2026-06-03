@@ -79,8 +79,14 @@ export default function LessonHomework({
     }).select().single();
     setCreating(false);
     if (error || !data) return alert(error?.message);
-    setItems((prev) => prev.some((h) => h.id === (data as Homework).id) ? prev : [data as Homework, ...prev]);
+    const hw = data as Homework;
+    setItems((prev) => prev.some((h) => h.id === hw.id) ? prev : [hw, ...prev]);
     setTitle(""); setInstructions(""); setDueAt("");
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "homework_assigned", id: hw.id }),
+    }).catch(() => {});
     router.refresh();
   }
 
@@ -214,6 +220,11 @@ function HomeworkItem({
       .select().single();
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "homework_graded", id: hw.id }),
+    }).catch(() => {});
     router.refresh();
   }
 

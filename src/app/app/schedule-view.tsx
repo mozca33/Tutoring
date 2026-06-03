@@ -427,9 +427,17 @@ function LessonDialog({
       duration_minutes: duration,
       recurrence_group: group,
     }));
-    const { error } = await supabase.from("lessons").insert(rows);
+    const { data: created, error } = await supabase.from("lessons").insert(rows).select("id");
     setLoading(false);
     if (error) return setError(error.message);
+    // Notifica o aluno por e-mail (não bloqueia o fluxo).
+    if (created?.[0]?.id) {
+      fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "lesson_scheduled", id: created[0].id }),
+      }).catch(() => {});
+    }
     onClose();
     router.refresh();
   }
