@@ -14,7 +14,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
 type Tool = "pen" | "arrow" | "ellipse" | "text";
 type StrokeData = { points?: number[][]; x1?: number; y1?: number; x2?: number; y2?: number; text?: string };
 type Stroke = { id: string; author_id: string; tool: Tool; color: string; data: StrokeData };
-type Material = { id: string; file_name: string; storage_path: string };
+type Material = { id: string; file_name: string; storage_path: string; lessonTitle?: string | null };
 
 const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#111827", "#ffffff"];
 
@@ -48,8 +48,17 @@ export default function LessonBoard({
     (async () => {
       const { data } = await supabase.from("board_strokes").select("id, author_id, tool, color, data").eq("lesson_id", lessonId).order("created_at");
       if (data) setStrokes(data as Stroke[]);
-      const { data: files } = await supabase.from("lesson_files").select("id, file_name, storage_path").eq("lesson_id", lessonId);
-      setMaterials(files ?? []);
+      // Todos os materiais acessíveis (RLS já restringe às aulas do usuário),
+      // tanto desta aula quanto das demais.
+      const { data: files } = await supabase
+        .from("lesson_files")
+        .select("id, file_name, storage_path, lesson_id, lesson:lesson_id(title)")
+        .order("created_at", { ascending: false })
+        .returns<{ id: string; file_name: string; storage_path: string; lesson_id: string; lesson: { title: string } | null }[]>();
+      setMaterials((files ?? []).map((f) => ({
+        id: f.id, file_name: f.file_name, storage_path: f.storage_path,
+        lessonTitle: f.lesson_id === lessonId ? "Esta aula" : (f.lesson?.title ?? null),
+      })));
     })();
   }, [lessonId]);
 
@@ -224,7 +233,10 @@ export default function LessonBoard({
             <button onClick={() => { setBg({ kind: "none", page: 1, numPages: 1 }); setShowBgPicker(false); }} className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-background">Quadro em branco</button>
             {materials.length === 0 && <p className="text-xs text-muted px-2 py-1">Sem materiais para usar de fundo.</p>}
             {materials.map((m) => (
-              <button key={m.id} onClick={() => pickBackground(m)} className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-background truncate">{m.file_name}</button>
+              <button key={m.id} onClick={() => pickBackground(m)} className="w-full text-left px-2 py-1.5 rounded hover:bg-background">
+                <span className="block text-sm truncate">{m.file_name}</span>
+                {m.lessonTitle && <span className="block text-[11px] text-muted truncate">{m.lessonTitle}</span>}
+              </button>
             ))}
             <p className="text-[11px] text-muted px-2 pt-1">PPT/DOCX: exporte para PDF para usar de fundo.</p>
           </div>
