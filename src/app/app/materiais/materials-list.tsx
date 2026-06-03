@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileText, Download, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FilePreview from "@/components/file-preview";
+import PdfAnnotator from "@/components/pdf-annotator-dynamic";
 
 export type MaterialGroup = {
   lessonId: string;
@@ -19,8 +20,9 @@ export type MaterialGroup = {
   }[];
 };
 
-export default function MaterialsList({ groups }: { groups: MaterialGroup[] }) {
+export default function MaterialsList({ groups, currentUserId }: { groups: MaterialGroup[]; currentUserId: string }) {
   const [preview, setPreview] = useState<{ name: string; path: string } | null>(null);
+  const [annotate, setAnnotate] = useState<{ id: string; name: string; path: string } | null>(null);
 
   async function download(path: string) {
     const supabase = createClient();
@@ -63,6 +65,11 @@ export default function MaterialsList({ groups }: { groups: MaterialGroup[] }) {
                   <button onClick={() => setPreview({ name: f.file_name, path: f.storage_path })} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                     <Eye size={16} /> Ver
                   </button>
+                  {f.file_name.toLowerCase().endsWith(".pdf") && (
+                    <button onClick={() => setAnnotate({ id: f.id, name: f.file_name, path: f.storage_path })} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                      Anotar
+                    </button>
+                  )}
                   <button onClick={() => download(f.storage_path)} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                     <Download size={16} /> Baixar
                   </button>
@@ -74,6 +81,10 @@ export default function MaterialsList({ groups }: { groups: MaterialGroup[] }) {
       ))}
       {preview && (
         <FilePreview fileName={preview.name} storagePath={preview.path} onClose={() => setPreview(null)} />
+      )}
+      {annotate && (
+        <PdfAnnotator fileId={annotate.id} fileName={annotate.name} storagePath={annotate.path}
+          currentUserId={currentUserId} onClose={() => setAnnotate(null)} />
       )}
     </div>
   );

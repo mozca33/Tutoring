@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
 import FilePreview from "@/components/file-preview";
+import PdfAnnotator from "@/components/pdf-annotator-dynamic";
 
 type FileRow = {
   id: string;
@@ -32,6 +33,7 @@ export default function LessonFiles({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<FileRow | null>(null);
+  const [annotate, setAnnotate] = useState<FileRow | null>(null);
 
   // Realtime: materiais enviados/removidos aparecem para todos os participantes.
   useEffect(() => {
@@ -131,6 +133,9 @@ export default function LessonFiles({
               </div>
               <div className="flex gap-3 text-sm">
                 <button onClick={() => setPreview(f)} className="text-indigo-600 hover:underline">Visualizar</button>
+                {f.file_name.toLowerCase().endsWith(".pdf") && (
+                  <button onClick={() => setAnnotate(f)} className="text-indigo-600 hover:underline">Anotar</button>
+                )}
                 <button onClick={() => download(f)} className="text-indigo-600 hover:underline">Baixar</button>
                 {f.uploader_id === currentUserId && (
                   <button onClick={() => remove(f)} className="text-red-600 hover:underline">Remover</button>
@@ -142,6 +147,10 @@ export default function LessonFiles({
       )}
       {preview && (
         <FilePreview fileName={preview.file_name} storagePath={preview.storage_path} onClose={() => setPreview(null)} />
+      )}
+      {annotate && (
+        <PdfAnnotator fileId={annotate.id} fileName={annotate.file_name} storagePath={annotate.storage_path}
+          currentUserId={currentUserId} onClose={() => setAnnotate(null)} />
       )}
     </div>
   );

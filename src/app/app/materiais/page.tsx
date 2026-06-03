@@ -41,7 +41,7 @@ export default async function MateriaisPage() {
         <h1 className="text-2xl font-semibold">Materiais</h1>
         <p className="text-muted">Todos os arquivos das suas aulas em um só lugar.</p>
       </header>
-      <MaterialsList groups={groups} />
+      <MaterialsList groups={groups} currentUserId={user.id} />
     </div>
   );
 }
