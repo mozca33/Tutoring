@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,6 +16,25 @@ export default function LessonComments({ lessonId, initial }: { lessonId: string
   const [items, setItems] = useState(initial);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Realtime: novos comentários de qualquer participante aparecem na hora.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`comments:${lessonId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "lesson_comments", filter: `lesson_id=eq.${lessonId}` },
+        async (payload) => {
+          const row = payload.new as { id: string; content: string; created_at: string; author_id: string };
+          setItems((prev) => prev.some((c) => c.id === row.id) ? prev : prev); // evita corrida
+          const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", row.author_id).single();
+          setItems((prev) => prev.some((c) => c.id === row.id)
+            ? prev
+            : [...prev, { id: row.id, content: row.content, created_at: row.created_at, author: prof ?? null }]);
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [lessonId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

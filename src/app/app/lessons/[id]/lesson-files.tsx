@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
@@ -32,6 +32,27 @@ export default function LessonFiles({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<FileRow | null>(null);
+
+  // Realtime: materiais enviados/removidos aparecem para todos os participantes.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`files:${lessonId}`)
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "lesson_files", filter: `lesson_id=eq.${lessonId}` },
+        (payload) => {
+          const row = payload.new as FileRow;
+          setFiles((prev) => prev.some((f) => f.id === row.id) ? prev : [row, ...prev]);
+        })
+      .on("postgres_changes",
+        { event: "DELETE", schema: "public", table: "lesson_files", filter: `lesson_id=eq.${lessonId}` },
+        (payload) => {
+          const old = payload.old as { id: string };
+          setFiles((prev) => prev.filter((f) => f.id !== old.id));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [lessonId]);
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

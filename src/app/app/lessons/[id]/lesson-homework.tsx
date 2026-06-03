@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
@@ -35,6 +35,28 @@ export default function LessonHomework({
 }) {
   const router = useRouter();
   const [items, setItems] = useState(initial);
+
+  // Realtime: tarefas criadas/entregues/corrigidas atualizam para ambos.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`homeworks:${lessonId}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "homeworks", filter: `lesson_id=eq.${lessonId}` },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            const old = payload.old as { id: string };
+            setItems((prev) => prev.filter((h) => h.id !== old.id));
+            return;
+          }
+          const row = payload.new as Homework;
+          setItems((prev) => prev.some((h) => h.id === row.id)
+            ? prev.map((h) => h.id === row.id ? row : h)
+            : [row, ...prev]);
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [lessonId]);
 
   // Teacher: create form state
   const [title, setTitle] = useState("");
