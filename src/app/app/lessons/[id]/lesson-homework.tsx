@@ -139,14 +139,20 @@ function HomeworkItem({
   const [grade, setGrade] = useState(hw.grade ?? "");
   const [feedback, setFeedback] = useState(hw.feedback ?? "");
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [grading, setGrading] = useState(false);
 
   async function submit() {
+    if (submitting) return;
+    if (!submission.trim() && !hw.submission_file_path) return alert("Escreva uma resposta ou anexe um arquivo.");
+    setSubmitting(true);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("homeworks")
       .update({ submission_text: submission, submitted_at: new Date().toISOString() })
       .eq("id", hw.id)
       .select().single();
+    setSubmitting(false);
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
     router.refresh();
@@ -212,12 +218,15 @@ function HomeworkItem({
   }
 
   async function grade_() {
+    if (grading) return;
+    setGrading(true);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("homeworks")
       .update({ grade, feedback })
       .eq("id", hw.id)
       .select().single();
+    setGrading(false);
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
     fetch("/api/notify", {
@@ -257,8 +266,8 @@ function HomeworkItem({
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <button onClick={submit} className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm">
-              {hw.submitted_at ? "Atualizar entrega" : "Entregar"}
+            <button onClick={submit} disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50">
+              {submitting ? "Enviando..." : hw.submitted_at ? "Atualizar entrega" : "Entregar"}
             </button>
             <label className="inline-block">
               <span className="inline-block border border-indigo-600 text-indigo-600 px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-indigo-50">
@@ -287,7 +296,7 @@ function HomeworkItem({
             value={grade} onChange={(e) => setGrade(e.target.value)} />
           <textarea className="w-full border rounded-lg px-3 py-2" rows={2} placeholder="Comentários"
             value={feedback} onChange={(e) => setFeedback(e.target.value)} />
-          <button onClick={grade_} className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm">Salvar correção</button>
+          <button onClick={grade_} disabled={grading} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50">{grading ? "Salvando..." : "Salvar correção"}</button>
         </div>
       )}
 

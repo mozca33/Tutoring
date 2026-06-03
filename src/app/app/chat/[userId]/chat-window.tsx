@@ -50,9 +50,11 @@ function EventCard({ m }: { m: Message }) {
   const icon = m.event_type === "completed" ? <CheckCircle2 size={15} className="text-emerald-600 dark:text-emerald-400" />
     : m.event_type === "cancelled" ? <CalendarX size={15} className="text-amber-600 dark:text-amber-400" />
     : <CalendarClock size={15} className="text-violet-600 dark:text-violet-400" />;
+  // Concluída → Materiais da aula; demais → a própria aula.
+  const href = m.event_type === "completed" ? `/app/materiais?aula=${m.lesson_id}` : `/app/lessons/${m.lesson_id}`;
   return (
     <div className="my-2">
-      <Link href={`/app/lessons/${m.lesson_id}`}
+      <Link href={href}
         className="flex items-start gap-2 border border-border rounded-lg px-3 py-2 bg-surface hover:bg-background transition-colors">
         <span className="mt-0.5 shrink-0">{icon}</span>
         <span className="text-sm font-medium">{m.content}</span>
