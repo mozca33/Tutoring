@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
 import FilePreview from "@/components/file-preview";
 import PdfAnnotator from "@/components/pdf-annotator-dynamic";
+import FileActionsMenu from "@/components/file-actions-menu";
 
 type FileRow = {
   id: string;
@@ -131,16 +132,12 @@ export default function LessonFiles({
                   {f.mime_type ? ` · ${f.mime_type}` : ""}
                 </p>
               </div>
-              <div className="flex gap-3 text-sm">
-                <button onClick={() => setPreview(f)} className="text-indigo-600 hover:underline">Visualizar</button>
-                {f.file_name.toLowerCase().endsWith(".pdf") && (
-                  <button onClick={() => setAnnotate(f)} className="text-indigo-600 hover:underline">Anotar</button>
-                )}
-                <button onClick={() => download(f)} className="text-indigo-600 hover:underline">Baixar</button>
-                {f.uploader_id === currentUserId && (
-                  <button onClick={() => remove(f)} className="text-red-600 hover:underline">Remover</button>
-                )}
-              </div>
+              <FileActionsMenu
+                onView={() => setPreview(f)}
+                onAnnotate={f.file_name.toLowerCase().endsWith(".pdf") ? () => setAnnotate(f) : undefined}
+                onDownload={() => download(f)}
+                onRemove={f.uploader_id === currentUserId ? () => remove(f) : undefined}
+              />
             </li>
           ))}
         </ul>

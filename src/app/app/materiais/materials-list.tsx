@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Download, Eye } from "lucide-react";
+import { FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import FilePreview from "@/components/file-preview";
 import PdfAnnotator from "@/components/pdf-annotator-dynamic";
+import FileActionsMenu from "@/components/file-actions-menu";
 
 export type MaterialGroup = {
   lessonId: string;
@@ -61,19 +62,11 @@ export default function MaterialsList({ groups, currentUserId }: { groups: Mater
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <button onClick={() => setPreview({ name: f.file_name, path: f.storage_path })} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-                    <Eye size={16} /> Ver
-                  </button>
-                  {f.file_name.toLowerCase().endsWith(".pdf") && (
-                    <button onClick={() => setAnnotate({ id: f.id, name: f.file_name, path: f.storage_path })} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-                      Anotar
-                    </button>
-                  )}
-                  <button onClick={() => download(f.storage_path)} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-                    <Download size={16} /> Baixar
-                  </button>
-                </div>
+                <FileActionsMenu
+                  onView={() => setPreview({ name: f.file_name, path: f.storage_path })}
+                  onAnnotate={f.file_name.toLowerCase().endsWith(".pdf") ? () => setAnnotate({ id: f.id, name: f.file_name, path: f.storage_path }) : undefined}
+                  onDownload={() => download(f.storage_path)}
+                />
               </li>
             ))}
           </ul>
