@@ -8,6 +8,7 @@ import LessonHomework from "./lesson-homework";
 import LessonActions from "./lesson-actions";
 import RecordingSection from "./recording-section";
 import LessonChat from "./lesson-chat";
+import BoardLauncher from "./board-launcher";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -70,6 +71,11 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <BoardLauncher
+            lessonId={lesson.id}
+            currentUserId={user.id}
+            canDraw={lesson.status !== "completed" && lesson.status !== "cancelled"}
+          />
           <LessonChat
             lessonId={lesson.id}
             currentUserId={user.id}
