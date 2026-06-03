@@ -125,10 +125,6 @@ export default function ProfileForm({ initial }: { initial: Initial }) {
           <p className="text-xs text-muted mt-1">O e-mail não pode ser alterado por aqui.</p>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Tipo</label>
-          <input className={`${inputClass} opacity-60`} value={initial.role === "teacher" ? "Professor" : "Aluno"} disabled />
-        </div>
-        <div>
           <label className="block text-sm font-medium mb-1">Bio</label>
           <textarea className={inputClass} rows={3} placeholder="Conte um pouco sobre você..." value={bio} onChange={(e) => setBio(e.target.value)} />
         </div>
