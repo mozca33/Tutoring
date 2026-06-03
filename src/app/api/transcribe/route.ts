@@ -45,7 +45,7 @@ async function geminiTranscribe(blob: Blob, mimeType: string, apiKey: string): P
   if (file.state !== "ACTIVE") throw new Error("Gemini não processou o arquivo a tempo");
 
   // 4) Gera a transcrição
-  const gen = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+  const gen = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
