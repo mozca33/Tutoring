@@ -26,6 +26,11 @@ export default function LessonRoom({
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [mounted, setMounted] = useState(false);
+
+  // Evita hydration mismatch (datas/timezone e componentes do LiveKit):
+  // a sala só renderiza no cliente.
+  useEffect(() => { setMounted(true); }, []);
 
   // Reavalia a janela a cada 30s para liberar o botão na hora certa.
   useEffect(() => {
@@ -40,6 +45,10 @@ export default function LessonRoom({
   const tooEarly = now < opensAt;
   const tooLate = now > end + GRACE_AFTER_MS;
   const joinable = !closed && !tooEarly && !tooLate;
+
+  if (!mounted) {
+    return <div className="bg-slate-900 text-white/70 rounded-xl p-10 text-center text-sm">Carregando sala…</div>;
+  }
 
   async function join() {
     setJoining(true);
