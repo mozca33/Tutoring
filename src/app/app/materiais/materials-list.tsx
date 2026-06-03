@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import FilePreview from "@/components/file-preview";
 
 export type MaterialGroup = {
   lessonId: string;
@@ -18,6 +20,8 @@ export type MaterialGroup = {
 };
 
 export default function MaterialsList({ groups }: { groups: MaterialGroup[] }) {
+  const [preview, setPreview] = useState<{ name: string; path: string } | null>(null);
+
   async function download(path: string) {
     const supabase = createClient();
     const { data, error } = await supabase.storage.from("lesson-files").createSignedUrl(path, 60);
@@ -55,14 +59,22 @@ export default function MaterialsList({ groups }: { groups: MaterialGroup[] }) {
                     </p>
                   </div>
                 </div>
-                <button onClick={() => download(f.storage_path)} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline shrink-0">
-                  <Download size={16} /> Baixar
-                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button onClick={() => setPreview({ name: f.file_name, path: f.storage_path })} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                    <Eye size={16} /> Ver
+                  </button>
+                  <button onClick={() => download(f.storage_path)} className="inline-flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                    <Download size={16} /> Baixar
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         </section>
       ))}
+      {preview && (
+        <FilePreview fileName={preview.name} storagePath={preview.path} onClose={() => setPreview(null)} />
+      )}
     </div>
   );
 }

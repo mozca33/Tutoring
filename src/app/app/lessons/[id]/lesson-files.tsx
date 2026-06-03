@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
+import FilePreview from "@/components/file-preview";
 
 type FileRow = {
   id: string;
@@ -30,6 +31,7 @@ export default function LessonFiles({
   const [files, setFiles] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<FileRow | null>(null);
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -107,6 +109,7 @@ export default function LessonFiles({
                 </p>
               </div>
               <div className="flex gap-3 text-sm">
+                <button onClick={() => setPreview(f)} className="text-indigo-600 hover:underline">Visualizar</button>
                 <button onClick={() => download(f)} className="text-indigo-600 hover:underline">Baixar</button>
                 {f.uploader_id === currentUserId && (
                   <button onClick={() => remove(f)} className="text-red-600 hover:underline">Remover</button>
@@ -115,6 +118,9 @@ export default function LessonFiles({
             </li>
           ))}
         </ul>
+      )}
+      {preview && (
+        <FilePreview fileName={preview.file_name} storagePath={preview.storage_path} onClose={() => setPreview(null)} />
       )}
     </div>
   );
