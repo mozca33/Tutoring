@@ -3,10 +3,70 @@ import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 300;
 
-// Gera a transcrição da gravação via OpenAI Whisper.
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Transcreve a gravação usando a API do Gemini (Files API + generateContent).
+async function geminiTranscribe(blob: Blob, mimeType: string, apiKey: string): Promise<string> {
+  const size = blob.size;
+
+  // 1) Inicia upload resumável
+  const start = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`, {
+    method: "POST",
+    headers: {
+      "X-Goog-Upload-Protocol": "resumable",
+      "X-Goog-Upload-Command": "start",
+      "X-Goog-Upload-Header-Content-Length": String(size),
+      "X-Goog-Upload-Header-Content-Type": mimeType,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ file: { display_name: "aula" } }),
+  });
+  const uploadUrl = start.headers.get("X-Goog-Upload-URL");
+  if (!uploadUrl) throw new Error("Falha ao iniciar upload no Gemini");
+
+  // 2) Envia os bytes
+  const up = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "X-Goog-Upload-Command": "upload, finalize", "X-Goog-Upload-Offset": "0", "Content-Length": String(size) },
+    body: blob,
+  });
+  const upJson = await up.json();
+  let file = upJson.file;
+  if (!file?.name) throw new Error("Upload do Gemini sem arquivo");
+
+  // 3) Aguarda processamento
+  let tries = 0;
+  while (file.state === "PROCESSING" && tries < 40) {
+    await sleep(3000);
+    tries++;
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/${file.name}?key=${apiKey}`);
+    file = await r.json();
+  }
+  if (file.state !== "ACTIVE") throw new Error("Gemini não processou o arquivo a tempo");
+
+  // 4) Gera a transcrição
+  const gen = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { file_data: { mime_type: mimeType, file_uri: file.uri } },
+          { text: "Transcreva integralmente o áudio desta aula em português do Brasil, com pontuação e parágrafos. Responda apenas com a transcrição, sem comentários." },
+        ],
+      }],
+    }),
+  });
+  const genJson = await gen.json();
+  if (!gen.ok) throw new Error(`Gemini: ${JSON.stringify(genJson).slice(0, 300)}`);
+  const text = genJson.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+  if (!text) throw new Error("Transcrição vazia");
+  return text;
+}
+
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Transcrição não configurada (OPENAI_API_KEY)." }, { status: 500 });
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "Transcrição não configurada (GEMINI_API_KEY)." }, { status: 500 });
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -31,20 +91,9 @@ export async function POST(req: Request) {
 
     const fileRes = await fetch(signed.signedUrl);
     const blob = await fileRes.blob();
+    const mime = lesson.recording_path.endsWith(".mp4") ? "video/mp4" : (blob.type || "video/mp4");
 
-    const form = new FormData();
-    form.append("file", blob, "aula.mp4");
-    form.append("model", "whisper-1");
-    form.append("language", "pt");
-
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: form,
-    });
-    if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    const transcript = data.text as string;
+    const transcript = await geminiTranscribe(blob, mime, apiKey);
 
     await supabase.from("lessons").update({ transcript, transcript_status: "done" }).eq("id", lessonId);
     return NextResponse.json({ ok: true, transcript });
