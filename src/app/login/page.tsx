@@ -15,7 +15,11 @@ function LoginForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(params.get("error") === "auth" ? "Não foi possível entrar. Tente novamente." : null);
+  const [error, setError] = useState<string | null>(
+    params.get("error") === "nouser" ? "Conta não encontrada. Faça o cadastro primeiro."
+      : params.get("error") === "auth" ? "Não foi possível entrar. Tente novamente."
+        : null,
+  );
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -50,7 +54,7 @@ function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: authRedirectTo("/app") },
+      options: { redirectTo: authRedirectTo("/app", "login") },
     });
     if (error) { setGoogleLoading(false); setError(error.message); }
   }

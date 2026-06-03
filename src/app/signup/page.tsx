@@ -53,7 +53,7 @@ export default function SignupPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: authRedirectTo("/app") },
+      options: { redirectTo: authRedirectTo("/app", "signup") },
     });
     if (error) { setGoogleLoading(false); setError(error.message); }
   }

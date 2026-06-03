@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
 
@@ -33,7 +32,6 @@ export default function LessonHomework({
   studentId: string;
   initial: Homework[];
 }) {
-  const router = useRouter();
   const [items, setItems] = useState(initial);
 
   // Realtime: tarefas criadas/entregues/corrigidas atualizam para ambos.
@@ -87,7 +85,6 @@ export default function LessonHomework({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "homework_assigned", id: hw.id }),
     }).catch(() => {});
-    router.refresh();
   }
 
   return (
@@ -134,7 +131,6 @@ function HomeworkItem({
   isTeacher: boolean;
   onChange: (h: Homework) => void;
 }) {
-  const router = useRouter();
   const [submission, setSubmission] = useState(hw.submission_text ?? "");
   const [grade, setGrade] = useState(hw.grade ?? "");
   const [feedback, setFeedback] = useState(hw.feedback ?? "");
@@ -155,7 +151,6 @@ function HomeworkItem({
     setSubmitting(false);
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
-    router.refresh();
   }
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -189,7 +184,6 @@ function HomeworkItem({
     e.target.value = "";
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
-    router.refresh();
   }
 
   async function downloadFile() {
@@ -214,7 +208,6 @@ function HomeworkItem({
       .select().single();
     if (error || !data) return alert(error?.message);
     onChange(data as Homework);
-    router.refresh();
   }
 
   async function grade_() {
@@ -234,7 +227,6 @@ function HomeworkItem({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "homework_graded", id: hw.id }),
     }).catch(() => {});
-    router.refresh();
   }
 
   const isStudent = !isTeacher && hw.student_id === currentUserId;

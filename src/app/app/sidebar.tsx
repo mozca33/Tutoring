@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen, MessageSquare, Users, FolderOpen, User, CreditCard,
-  Menu, X, LogOut, Moon, Sun, PanelLeftClose, PanelLeft,
+  Menu, X, LogOut, Moon, Sun, PanelLeftClose, PanelLeft, Copy, Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { applyPreferences, isDark, type Theme, type Density } from "@/lib/preferences";
@@ -19,14 +19,20 @@ const NAV = [
 ];
 
 export default function Sidebar({
-  name, role, avatarUrl, theme, density,
+  name, role, avatarUrl, teacherCode, theme, density,
 }: {
   name: string;
   role: string;
   avatarUrl: string | null;
+  teacherCode: string | null;
   theme: Theme;
   density: Density;
 }) {
+  const [copied, setCopied] = useState(false);
+  function copyCode() {
+    if (!teacherCode) return;
+    navigator.clipboard?.writeText(teacherCode).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
+  }
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -104,6 +110,15 @@ export default function Sidebar({
           <span className="block text-xs text-muted">{role === "teacher" ? "Professor" : "Aluno"}</span>
         </span>
       </Link>
+
+      {role === "teacher" && teacherCode && (
+        <button onClick={copyCode} title="Copiar código"
+          className={`w-full flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-background transition-colors ${collapsed ? "lg:justify-center" : ""}`}>
+          <span className="text-xs text-muted shrink-0">Código</span>
+          <span className={`font-mono text-sm tracking-widest text-indigo-600 dark:text-indigo-400 ${collapsed ? "lg:hidden" : ""}`}>{teacherCode}</span>
+          <span className={`ml-auto text-muted ${collapsed ? "lg:hidden" : ""}`}>{copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}</span>
+        </button>
+      )}
       <div className={`flex gap-1 ${collapsed ? "lg:flex-col" : ""}`}>
         <button
           onClick={quickToggleTheme}

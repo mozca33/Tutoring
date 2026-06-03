@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Comment = {
@@ -12,7 +11,6 @@ type Comment = {
 };
 
 export default function LessonComments({ lessonId, initial }: { lessonId: string; initial: Comment[] }) {
-  const router = useRouter();
   const [items, setItems] = useState(initial);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +50,6 @@ export default function LessonComments({ lessonId, initial }: { lessonId: string
     if (error || !data) return;
     setItems([...items, data as unknown as Comment]);
     setText("");
-    router.refresh();
   }
 
   return (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateUpload, ACCEPT_ATTR } from "@/lib/uploads";
 import FilePreview from "@/components/file-preview";
@@ -29,7 +28,6 @@ export default function LessonFiles({
   isTeacher: boolean;
   initial: FileRow[];
 }) {
-  const router = useRouter();
   const [files, setFiles] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +85,6 @@ export default function LessonFiles({
     e.target.value = "";
     if (insertErr || !data) { setError(insertErr?.message ?? "Erro"); return; }
     setFiles([data as FileRow, ...files]);
-    router.refresh();
   }
 
   async function download(f: FileRow) {
@@ -105,7 +102,6 @@ export default function LessonFiles({
     await supabase.storage.from("lesson-files").remove([f.storage_path]);
     await supabase.from("lesson_files").delete().eq("id", f.id);
     setFiles(files.filter((x) => x.id !== f.id));
-    router.refresh();
   }
 
   return (
