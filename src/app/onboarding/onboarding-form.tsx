@@ -18,9 +18,15 @@ export default function OnboardingForm() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
+    const updates: Record<string, unknown> = { role, role_confirmed: true };
+    if (role === "teacher") {
+      // Inicia o trial de 3 dias ao virar professor
+      updates.subscription_status = "trialing";
+      updates.trial_ends_at = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    }
     const { error } = await supabase
       .from("profiles")
-      .update({ role, role_confirmed: true })
+      .update(updates)
       .eq("id", user.id);
     if (error) { setLoading(false); return setError(error.message); }
     router.push("/app");

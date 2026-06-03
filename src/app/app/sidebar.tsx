@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BookOpen, MessageSquare, Users, FolderOpen, User,
+  BookOpen, MessageSquare, Users, FolderOpen, User, CreditCard,
   Menu, X, LogOut, Moon, Sun, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -54,9 +54,14 @@ export default function Sidebar({
 
   const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
+  const nav = [...NAV];
+  if (role === "teacher") {
+    nav.splice(4, 0, { href: "/app/assinatura", label: "Assinatura", icon: CreditCard });
+  }
+
   const NavList = (
     <nav className="flex-1 px-2 space-y-1">
-      {NAV.map(({ href, label, icon: Icon, exact }) => {
+      {nav.map(({ href, label, icon: Icon, exact }) => {
         const active = isActive(href, exact);
         return (
           <Link

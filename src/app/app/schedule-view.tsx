@@ -44,10 +44,16 @@ export default function ScheduleView({
   lessons,
   students,
   isTeacher,
+  locked = false,
+  trialDaysLeft = null,
+  subscriptionStatus = "none",
 }: {
   lessons: Lesson[];
   students: { id: string; full_name: string }[];
   isTeacher: boolean;
+  locked?: boolean;
+  trialDaysLeft?: number | null;
+  subscriptionStatus?: string;
 }) {
   const router = useRouter();
   const today = new Date();
@@ -109,15 +115,38 @@ export default function ScheduleView({
     setPopup({ date: d, x: Math.max(pad, x), y: Math.max(pad, y) });
   }
 
+  const canSchedule = isTeacher && !locked;
+
   return (
     <div className="space-y-5">
+      {isTeacher && locked && (
+        <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Seu período de teste terminou. Assine para voltar a agendar aulas e enviar materiais.
+          </p>
+          <Link href="/app/assinatura" className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 text-sm font-medium transition-colors">
+            Ver planos
+          </Link>
+        </div>
+      )}
+      {isTeacher && !locked && trialDaysLeft !== null && subscriptionStatus === "trialing" && (
+        <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/40 p-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-indigo-800 dark:text-indigo-200">
+            Você está no período de teste — {trialDaysLeft} {trialDaysLeft === 1 ? "dia restante" : "dias restantes"}.
+          </p>
+          <Link href="/app/assinatura" className="text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:underline">
+            Assinar agora
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold capitalize">{MONTHS[cursor.getMonth()]} {cursor.getFullYear()}</h1>
         <div className="flex items-center gap-2">
           <button onClick={goToday} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-surface transition-colors">Hoje</button>
           <button onClick={() => goMonth(-1)} aria-label="Mês anterior" className="rounded-lg border border-border p-1.5 hover:bg-surface transition-colors"><ChevronLeft size={18} /></button>
           <button onClick={() => goMonth(1)} aria-label="Próximo mês" className="rounded-lg border border-border p-1.5 hover:bg-surface transition-colors"><ChevronRight size={18} /></button>
-          {isTeacher && (
+          {canSchedule && (
             <button onClick={() => setDialogDate(today)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 text-sm font-medium transition-colors">
               <Plus size={16} /> Nova aula
             </button>
@@ -204,7 +233,7 @@ export default function ScheduleView({
         <DayPopup
           popup={popup}
           lessons={byDay.get(dayKey(popup.date)) ?? []}
-          isTeacher={isTeacher}
+          isTeacher={canSchedule}
           onClose={() => setPopup(null)}
           onNew={() => { setDialogDate(popup.date); setPopup(null); }}
         />

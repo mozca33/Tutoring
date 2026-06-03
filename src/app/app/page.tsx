@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import ScheduleView, { type Lesson } from "./schedule-view";
+import { teacherHasAccess, trialDaysLeft } from "@/lib/subscription";
 
 type LessonRow = {
   id: string;
@@ -17,8 +18,16 @@ export default async function Dashboard() {
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", user.id).single();
+    .from("profiles").select("role, subscription_status, trial_ends_at").eq("id", user.id).single();
   const isTeacher = profile?.role === "teacher";
+
+  const sub = {
+    role: profile?.role ?? "student",
+    subscription_status: profile?.subscription_status ?? "none",
+    trial_ends_at: profile?.trial_ends_at ?? null,
+  };
+  const hasAccess = teacherHasAccess(sub);
+  const daysLeft = trialDaysLeft(sub.trial_ends_at);
 
   const { data: rows } = await supabase
     .from("lessons")
@@ -46,5 +55,14 @@ export default async function Dashboard() {
     students = (data ?? []).map((r) => r.student).filter(Boolean);
   }
 
-  return <ScheduleView lessons={lessons} students={students} isTeacher={isTeacher} />;
+  return (
+    <ScheduleView
+      lessons={lessons}
+      students={students}
+      isTeacher={isTeacher}
+      locked={isTeacher && !hasAccess}
+      trialDaysLeft={sub.subscription_status === "trialing" ? daysLeft : null}
+      subscriptionStatus={sub.subscription_status}
+    />
+  );
 }
