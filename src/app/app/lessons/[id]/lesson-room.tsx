@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import "@livekit/components-styles";
 import { LiveKitRoom, VideoConference } from "@livekit/components-react";
 import { Video, Clock, Lock } from "lucide-react";
+import RoomControls from "./room-controls";
 
 // Janela de entrada: abre 10 min antes e fecha 30 min após o término.
 const OPEN_BEFORE_MS = 10 * 60 * 1000;
@@ -103,7 +104,7 @@ export default function LessonRoom({
           {error}
         </div>
       )}
-      <div style={{ height: "70vh" }} className="rounded-xl overflow-hidden">
+      <div style={{ height: "70vh" }} className="rounded-xl overflow-hidden flex flex-col">
         <LiveKitRoom
           token={token}
           serverUrl={wsUrl}
@@ -113,9 +114,12 @@ export default function LessonRoom({
           audio
           onDisconnected={leave}
           onError={onRoomError}
-          style={{ height: "100%" }}
+          style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
         >
-          <VideoConference />
+          <RoomControls />
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <VideoConference />
+          </div>
         </LiveKitRoom>
       </div>
     </div>
