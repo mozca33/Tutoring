@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import "@livekit/components-styles";
-import { LiveKitRoom, VideoConference } from "@livekit/components-react";
+import { LiveKitRoom } from "@livekit/components-react";
 import { Video, Clock, Lock } from "lucide-react";
 import RoomControls from "./room-controls";
+import LessonConference from "./lesson-conference";
 
 // Janela de entrada: abre 10 min antes e fecha 30 min após o término.
 const OPEN_BEFORE_MS = 10 * 60 * 1000;
@@ -131,7 +132,7 @@ export default function LessonRoom({
         >
           <RoomControls lessonId={lessonId} isTeacher={isTeacher} initialRecording={recordingActive} />
           <div style={{ flex: 1, minHeight: 0 }}>
-            <VideoConference />
+            <LessonConference />
           </div>
         </LiveKitRoom>
       </div>

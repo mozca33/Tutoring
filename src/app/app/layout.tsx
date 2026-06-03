@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "./sidebar";
 import PreferencesProvider from "./preferences-provider";
+import MessageNotifier from "./message-notifier";
 import type { Theme, Density } from "@/lib/preferences";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         />
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-8">{children}</main>
       </div>
+      <MessageNotifier userId={user.id} />
     </PreferencesProvider>
   );
 }
