@@ -62,9 +62,12 @@ export default function LessonHomework({
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [creating, setCreating] = useState(false);
 
   async function createHomework(e: React.FormEvent) {
     e.preventDefault();
+    if (creating) return; // evita duplicar com clique/duplo-submit rápido
+    setCreating(true);
     const supabase = createClient();
     const { data, error } = await supabase.from("homeworks").insert({
       lesson_id: lessonId,
@@ -74,8 +77,9 @@ export default function LessonHomework({
       instructions: instructions || null,
       due_at: dueAt ? new Date(dueAt).toISOString() : null,
     }).select().single();
+    setCreating(false);
     if (error || !data) return alert(error?.message);
-    setItems([data as Homework, ...items]);
+    setItems((prev) => prev.some((h) => h.id === (data as Homework).id) ? prev : [data as Homework, ...prev]);
     setTitle(""); setInstructions(""); setDueAt("");
     router.refresh();
   }
@@ -92,7 +96,7 @@ export default function LessonHomework({
             <label className="text-sm text-slate-600">Prazo:</label>
             <input type="datetime-local" className="border rounded-lg px-3 py-2"
               value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
-            <button className="ml-auto bg-indigo-600 text-white px-4 py-2 rounded-lg">Atribuir tarefa</button>
+            <button disabled={creating} className="ml-auto bg-indigo-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">{creating ? "Atribuindo..." : "Atribuir tarefa"}</button>
           </div>
         </form>
       )}
