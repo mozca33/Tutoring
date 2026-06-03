@@ -11,9 +11,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, avatar_url, theme, density")
+    .select("full_name, role, avatar_url, theme, density, role_confirmed")
     .eq("id", user.id)
     .single();
+
+  if (profile && !profile.role_confirmed) redirect("/onboarding");
 
   const theme = (profile?.theme ?? "system") as Theme;
   const density = (profile?.density ?? "medium") as Density;
