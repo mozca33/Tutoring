@@ -1,31 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import AddContactForm from "./add-contact-form";
 import RemoveContactButton from "./remove-contact-button";
+import ResendInviteButton from "./resend-invite-button";
 
-type Person = { id: string; full_name: string; email: string | null };
-type Rel = {
-  id: string;
-  teacher: Person | null;
-  student: Person | null;
-};
+type Person = { id: string; full_name: string; email: string | null; invited_pending?: boolean };
+type Rel = { id: string; teacher: Person | null; student: Person | null };
 
 export default async function ContatosPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles").select("role, teacher_code").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   const isTeacher = profile?.role === "teacher";
 
   const { data: rels } = await supabase
     .from("relationships")
-    .select("id, teacher:teacher_id(id, full_name, email), student:student_id(id, full_name, email)")
+    .select("id, teacher:teacher_id(id, full_name, email), student:student_id(id, full_name, email, invited_pending)")
     .returns<Rel[]>();
 
-  // Separa pelos lados reais — um professor pode ser aluno de outro professor.
-  const teaching = (rels ?? []).filter((r) => r.teacher?.id === user.id); // contatos = meus alunos
-  const learning = (rels ?? []).filter((r) => r.student?.id === user.id); // contatos = meus professores
+  const teaching = (rels ?? []).filter((r) => r.teacher?.id === user.id);
+  const learning = (rels ?? []).filter((r) => r.student?.id === user.id);
 
   return (
     <div className="space-y-8">
@@ -35,21 +30,10 @@ export default async function ContatosPage() {
       </header>
 
       {isTeacher && (
-        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold mb-1">Seu código de professor</h2>
-            <p className="text-sm text-muted mb-2">Compartilhe com seus alunos: eles se cadastram informando este código.</p>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2">
-              <span className="font-mono text-xl tracking-[0.3em] font-semibold text-indigo-700 dark:text-indigo-300">{profile?.teacher_code ?? "—"}</span>
-            </div>
-          </div>
-          <div className="border-t border-border pt-4">
-            <h3 className="font-medium mb-2">Adicionar aluno por e-mail</h3>
-            <AddContactForm />
-            <p className="text-xs text-muted mt-2">
-              Alternativa ao código: informe o e-mail de alguém que já tenha conta (aluno ou outro professor).
-            </p>
-          </div>
+        <section className="bg-surface border border-border rounded-xl p-6">
+          <h2 className="text-lg font-semibold mb-1">Convidar aluno</h2>
+          <p className="text-sm text-muted mb-3">Informe o nome e o e-mail. O aluno recebe um link para criar a senha — a conta já fica vinculada a você.</p>
+          <AddContactForm />
         </section>
       )}
 
@@ -57,14 +41,18 @@ export default async function ContatosPage() {
         <section>
           <h2 className="text-lg font-semibold mb-3">Meus alunos</h2>
           {teaching.length === 0 ? (
-            <p className="text-muted">Nenhum aluno vinculado ainda.</p>
+            <p className="text-muted">Nenhum aluno ainda. Convide pelo formulário acima.</p>
           ) : (
             <ul className="grid gap-3">
               {teaching.map((r) => r.student && (
-                <li key={r.id} className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{r.student.full_name}</p>
-                    <p className="text-sm text-muted">{r.student.email}</p>
+                <li key={r.id} className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{r.student.full_name}</p>
+                      {r.student.invited_pending && <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-medium shrink-0">Pendente</span>}
+                    </div>
+                    <p className="text-sm text-muted truncate">{r.student.email}</p>
+                    {r.student.invited_pending && <ResendInviteButton studentId={r.student.id} />}
                   </div>
                   <RemoveContactButton relationshipId={r.id} />
                 </li>

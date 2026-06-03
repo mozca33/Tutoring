@@ -21,9 +21,12 @@ export default function ResetPasswordPage() {
     const pass = validatePassword(password);
     if (!pass.ok) return setError(pass.error!);
     setLoading(true);
-    const { error } = await createClient().auth.updateUser({ password });
+    const supabase = createClient();
+    const { data: updated, error } = await supabase.auth.updateUser({ password });
+    if (error) { setLoading(false); return setError("Não foi possível definir a senha. Abra novamente o link do e-mail e tente de novo."); }
+    // Marca primeiro acesso como concluído
+    if (updated.user) await supabase.from("profiles").update({ invited_pending: false }).eq("id", updated.user.id);
     setLoading(false);
-    if (error) return setError("Não foi possível definir a senha. Abra novamente o link do e-mail e tente de novo.");
     router.push("/app");
     router.refresh();
   }

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function AddContactForm() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -14,50 +14,36 @@ export default function AddContactForm() {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: contact, error: lookupErr } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("email", email.trim())
-      .maybeSingle();
-
-    if (lookupErr || !contact) {
-      setLoading(false);
-      return setMsg({ type: "err", text: "Usuário não encontrado. Verifique o e-mail." });
+    try {
+      const res = await fetch("/api/invite-student", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Falha");
+      setMsg({ type: "ok", text: data.alreadyExisted ? "Aluno já tinha conta — vinculado!" : "Convite enviado! O aluno receberá um e-mail para definir a senha." });
+      setName(""); setEmail("");
+      router.refresh();
+    } catch (e) {
+      setMsg({ type: "err", text: e instanceof Error ? e.message : "Erro" });
     }
-    if (contact.id === user.id) {
-      setLoading(false);
-      return setMsg({ type: "err", text: "Você não pode adicionar a si mesmo." });
-    }
-
-    // Qualquer usuário (aluno ou outro professor) pode ser vinculado como aluno.
-    const { error } = await supabase.from("relationships").insert({
-      teacher_id: user.id,
-      student_id: contact.id,
-    });
     setLoading(false);
-
-    if (error) {
-      const text = error.code === "23505" ? "Esse contato já está vinculado." : error.message;
-      return setMsg({ type: "err", text });
-    }
-    setMsg({ type: "ok", text: "Contato vinculado!" });
-    setEmail("");
-    router.refresh();
   }
 
+  const inputClass = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500";
+
   return (
-    <form onSubmit={onSubmit} className="flex gap-2">
-      <input className="flex-1 border rounded-lg px-3 py-2" type="email"
-        placeholder="email@aluno.com"
-        value={email} onChange={(e) => setEmail(e.target.value)} required />
-      <button disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">
-        {loading ? "..." : "Adicionar"}
-      </button>
-      {msg && <p className={`text-sm self-center ${msg.type === "ok" ? "text-green-600" : "text-red-600"}`}>{msg.text}</p>}
+    <form onSubmit={onSubmit} className="space-y-2">
+      <div className="grid sm:grid-cols-2 gap-2">
+        <input className={inputClass} placeholder="Nome do aluno" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required />
+        <input className={inputClass} type="email" placeholder="email@aluno.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </div>
+      <div className="flex items-center gap-3">
+        <button disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 transition-colors">
+          {loading ? "Enviando..." : "Convidar aluno"}
+        </button>
+        {msg && <p className={`text-sm ${msg.type === "ok" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{msg.text}</p>}
+      </div>
     </form>
   );
 }
