@@ -74,7 +74,8 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           <BoardLauncher
             lessonId={lesson.id}
             currentUserId={user.id}
-            canDraw={lesson.status !== "completed" && lesson.status !== "cancelled"}
+            isTeacher={isTeacher}
+            lessonActive={lesson.status !== "completed" && lesson.status !== "cancelled"}
           />
           <LessonChat
             lessonId={lesson.id}

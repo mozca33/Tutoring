@@ -5,7 +5,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import {
-  Pencil, ArrowUpRight, Circle, Type, Undo2, Trash2, X, ChevronLeft, ChevronRight, ImageIcon,
+  Pencil, ArrowUpRight, Circle, Type, Undo2, Trash2, X, ChevronLeft, ChevronRight, ImageIcon, Lock, Unlock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,13 +19,19 @@ type Material = { id: string; file_name: string; storage_path: string; lessonTit
 const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#111827", "#ffffff"];
 
 export default function LessonBoard({
-  lessonId, currentUserId, canDraw, onClose,
+  lessonId, currentUserId, isTeacher, lessonActive, onClose,
 }: {
   lessonId: string;
   currentUserId: string;
-  canDraw: boolean;
+  isTeacher: boolean;
+  lessonActive: boolean;
   onClose: () => void;
 }) {
+  const [allowed, setAllowed] = useState(false); // aluno pode editar?
+  const allowedRef = useRef(false);
+  useEffect(() => { allowedRef.current = allowed; }, [allowed]);
+  const canDraw = lessonActive && (isTeacher || allowed);
+
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#ef4444");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -82,10 +88,25 @@ export default function LessonBoard({
         const old = p.old as { id: string };
         setStrokes((prev) => prev.filter((x) => x.id !== old.id));
       })
-      .subscribe();
+      .on("broadcast", { event: "permission" }, ({ payload }) => {
+        if (!isTeacher) setAllowed(!!payload.allowed);
+      })
+      .on("broadcast", { event: "sync" }, () => {
+        // Professor responde ao aluno que acabou de abrir, com a permissão atual.
+        if (isTeacher) channel.send({ type: "broadcast", event: "permission", payload: { allowed: allowedRef.current } });
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && !isTeacher) channel.send({ type: "broadcast", event: "sync", payload: {} });
+      });
     chanRef.current = channel;
     return () => { supabase.removeChannel(channel); };
-  }, [lessonId]);
+  }, [lessonId, isTeacher]);
+
+  function togglePermission() {
+    const v = !allowed;
+    setAllowed(v);
+    chanRef.current?.send({ type: "broadcast", event: "permission", payload: { allowed: v } });
+  }
 
   function pt(e: React.PointerEvent): [number, number] {
     const r = surfaceRef.current!.getBoundingClientRect();
@@ -213,11 +234,19 @@ export default function LessonBoard({
               ))}
             </div>
             <button onClick={undo} title="Desfazer" className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"><Undo2 size={18} /></button>
-            <button onClick={clearAll} title="Limpar" className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"><Trash2 size={18} /></button>
+            {isTeacher && <button onClick={clearAll} title="Limpar (só professor)" className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"><Trash2 size={18} /></button>}
             <button onClick={() => setShowBgPicker((v) => !v)} title="Fundo" className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"><ImageIcon size={18} /></button>
+            {isTeacher && (
+              <button onClick={togglePermission}
+                className={`ml-1 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm ${allowed ? "bg-emerald-600 text-white" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                {allowed ? <Unlock size={16} /> : <Lock size={16} />} {allowed ? "Aluno editando" : "Liberar aluno"}
+              </button>
+            )}
           </>
         ) : (
-          <span className="text-white/70 text-sm">Quadro da aula (somente leitura)</span>
+          <span className="text-white/70 text-sm">
+            {lessonActive ? "Aguardando o professor liberar a edição…" : "Quadro da aula (somente leitura)"}
+          </span>
         )}
         {bg.kind === "pdf" && (
           <div className="flex items-center gap-1 text-white text-sm">
