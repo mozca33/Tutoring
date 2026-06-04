@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MessageSquare, CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +16,8 @@ export default function NotificationsBell({ userId }: { userId: string }) {
   const [items, setItems] = useState<Item[]>([]);
   const [open, setOpen] = useState(false);
   const [lastSeen, setLastSeen] = useState(0);
+  // Canal único por instância (o sino é renderizado em 2 lugares: topbar e sidebar).
+  const instanceId = useRef(Math.random().toString(36).slice(2)).current;
 
   useEffect(() => { setLastSeen(Number(localStorage.getItem("notif_seen") || 0)); }, []);
 
@@ -49,7 +51,7 @@ export default function NotificationsBell({ userId }: { userId: string }) {
       }));
     })();
 
-    const ch = supabase.channel(`bell:${userId}`)
+    const ch = supabase.channel(`bell:${userId}:${instanceId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${userId}` }, async (payload) => {
         const m = payload.new as { id: string; sender_id: string; content: string; kind?: string; event_type?: string; lesson_id?: string; created_at: string };
         if (m.sender_id === userId) return;
@@ -58,7 +60,7 @@ export default function NotificationsBell({ userId }: { userId: string }) {
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [userId]);
+  }, [userId, instanceId]);
 
   const unread = items.filter((i) => new Date(i.created_at).getTime() > lastSeen).length;
 
