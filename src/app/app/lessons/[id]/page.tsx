@@ -18,14 +18,14 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
 
   const { data: lesson } = await supabase
     .from("lessons")
-    .select("id, title, description, scheduled_at, duration_minutes, status, teacher_id, student_id, summary, recording_path, recording_status, transcript, teacher:teacher_id(full_name), student:student_id(full_name)")
+    .select("id, title, description, scheduled_at, duration_minutes, status, teacher_id, student_id, summary, recording_path, recording_status, transcript, board_student_allowed, teacher:teacher_id(full_name), student:student_id(full_name)")
     .eq("id", id)
     .single<{
       id: string; title: string; description: string | null;
       scheduled_at: string; duration_minutes: number; status: string;
       teacher_id: string; student_id: string; summary: string | null;
       recording_path: string | null; recording_status: string | null;
-      transcript: string | null;
+      transcript: string | null; board_student_allowed: boolean;
       teacher: { full_name: string } | null;
       student: { full_name: string } | null;
     }>();
@@ -76,6 +76,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             currentUserId={user.id}
             isTeacher={isTeacher}
             lessonActive={lesson.status !== "completed" && lesson.status !== "cancelled"}
+            initialAllowed={lesson.board_student_allowed}
           />
           <LessonChat
             lessonId={lesson.id}

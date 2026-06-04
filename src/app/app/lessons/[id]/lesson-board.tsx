@@ -20,15 +20,16 @@ const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6"
 const WIDTHS: { label: string; w: number }[] = [{ label: "P", w: 2 }, { label: "M", w: 4 }, { label: "G", w: 7 }];
 
 export default function LessonBoard({
-  lessonId, currentUserId, isTeacher, lessonActive, onClose,
+  lessonId, currentUserId, isTeacher, lessonActive, initialAllowed = false, onClose,
 }: {
   lessonId: string;
   currentUserId: string;
   isTeacher: boolean;
   lessonActive: boolean;
+  initialAllowed?: boolean;
   onClose: () => void;
 }) {
-  const [allowed, setAllowed] = useState(false); // aluno pode editar?
+  const [allowed, setAllowed] = useState(initialAllowed); // aluno pode editar?
   const allowedRef = useRef(false);
   useEffect(() => { allowedRef.current = allowed; }, [allowed]);
   const canDraw = lessonActive && (isTeacher || allowed);
@@ -104,10 +105,12 @@ export default function LessonBoard({
     return () => { supabase.removeChannel(channel); };
   }, [lessonId, isTeacher]);
 
-  function togglePermission() {
+  async function togglePermission() {
     const v = !allowed;
     setAllowed(v);
     chanRef.current?.send({ type: "broadcast", event: "permission", payload: { allowed: v } });
+    // Persiste e impõe via RLS (só o professor consegue, por lessons_update_teacher).
+    await createClient().from("lessons").update({ board_student_allowed: v }).eq("id", lessonId);
   }
 
   function pt(e: React.PointerEvent): [number, number] {

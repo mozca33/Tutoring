@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { validateEmail, validateName } from "@/lib/validation";
+import { rateLimit } from "@/lib/rate-limit";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tutoringlive.vercel.app";
 
@@ -13,6 +14,8 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!rateLimit(`invite:${user.id}`, 20, 60_000)) return NextResponse.json({ error: "Muitos convites em pouco tempo. Aguarde um minuto." }, { status: 429 });
+
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (me?.role !== "teacher") return NextResponse.json({ error: "Apenas professores convidam alunos." }, { status: 403 });
 

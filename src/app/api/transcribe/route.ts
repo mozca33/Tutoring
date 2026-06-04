@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 300;
 
@@ -71,6 +72,8 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  if (!rateLimit(`transcribe:${user.id}`, 5, 60_000)) return NextResponse.json({ error: "Aguarde antes de transcrever novamente." }, { status: 429 });
 
   const { lessonId } = await req.json().catch(() => ({}));
   if (!lessonId) return NextResponse.json({ error: "lessonId required" }, { status: 400 });

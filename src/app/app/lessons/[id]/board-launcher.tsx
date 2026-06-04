@@ -8,12 +8,13 @@ import { createClient } from "@/lib/supabase/client";
 const LessonBoard = dynamic(() => import("./lesson-board"), { ssr: false });
 
 export default function BoardLauncher({
-  lessonId, currentUserId, isTeacher, lessonActive,
+  lessonId, currentUserId, isTeacher, lessonActive, initialAllowed = false,
 }: {
   lessonId: string;
   currentUserId: string;
   isTeacher: boolean;
   lessonActive: boolean;
+  initialAllowed?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [invite, setInvite] = useState(false);
@@ -50,7 +51,7 @@ export default function BoardLauncher({
         </div>
       )}
 
-      {open && <LessonBoard lessonId={lessonId} currentUserId={currentUserId} isTeacher={isTeacher} lessonActive={lessonActive} onClose={() => setOpen(false)} />}
+      {open && <LessonBoard lessonId={lessonId} currentUserId={currentUserId} isTeacher={isTeacher} lessonActive={lessonActive} initialAllowed={initialAllowed} onClose={() => setOpen(false)} />}
     </>
   );
 }
