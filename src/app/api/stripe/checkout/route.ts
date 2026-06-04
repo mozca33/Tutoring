@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
 
-export async function POST() {
+export async function POST(req: Request) {
   if (!stripe || !process.env.STRIPE_PRICE_ID) {
     return NextResponse.json({ error: "Pagamentos ainda não configurados." }, { status: 500 });
   }
+
+  const { plan } = await req.json().catch(() => ({}));
+  const price = plan === "annual" && process.env.STRIPE_PRICE_ID_ANNUAL
+    ? process.env.STRIPE_PRICE_ID_ANNUAL
+    : process.env.STRIPE_PRICE_ID;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,7 +30,7 @@ export async function POST() {
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+    line_items: [{ price, quantity: 1 }],
     customer: profile?.stripe_customer_id ?? undefined,
     customer_email: profile?.stripe_customer_id ? undefined : (profile?.email ?? user.email ?? undefined),
     client_reference_id: user.id,

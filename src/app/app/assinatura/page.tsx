@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { trialDaysLeft } from "@/lib/subscription";
 import SubscribeButton from "./subscribe-button";
+import ManageButton from "./manage-button";
 
 const PLAN_FEATURES = [
   "Agendamento ilimitado de aulas",
@@ -61,7 +62,7 @@ export default async function AssinaturaPage() {
             </li>
           ))}
         </ul>
-        {!active && <SubscribeButton />}
+        {active ? <ManageButton /> : <SubscribeButton />}
       </div>
     </div>
   );
