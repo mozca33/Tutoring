@@ -1,6 +1,6 @@
 "use client";
 
-import { GridLayout, ParticipantTile, RoomAudioRenderer, ControlBar, useTracks } from "@livekit/components-react";
+import { GridLayout, ParticipantTile, RoomAudioRenderer, ControlBar, ConnectionStateToast, useTracks } from "@livekit/components-react";
 import { Track } from "livekit-client";
 
 // Conferência sem o chat embutido do LiveKit (usamos comentários/anotações na aula).
@@ -19,6 +19,7 @@ export default function LessonConference() {
         <ParticipantTile />
       </GridLayout>
       <RoomAudioRenderer />
+      <ConnectionStateToast />
       <ControlBar controls={{ microphone: true, camera: true, screenShare: true, chat: false, leave: true, settings: false }} />
     </div>
   );
