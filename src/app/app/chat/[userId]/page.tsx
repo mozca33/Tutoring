@@ -29,7 +29,9 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
         <h1 className="text-2xl font-semibold">{other.full_name}</h1>
         <p className="text-sm text-slate-500">{other.role === "teacher" ? "Professor" : "Aluno"}</p>
       </header>
-      <ChatWindow currentUserId={user.id} otherUserId={userId} initial={messages ?? []} />
+      <div className="h-[70vh]">
+        <ChatWindow currentUserId={user.id} otherUserId={userId} initial={messages ?? []} />
+      </div>
     </div>
   );
 }

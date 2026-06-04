@@ -175,7 +175,7 @@ export default function ChatWindow({
   const isCollapsed = (b: Block) => (b.key in collapsed ? collapsed[b.key] : b.kind === "lesson");
 
   return (
-    <div className="bg-surface border border-border rounded-xl flex flex-col" style={{ height: "65vh" }}>
+    <div className="bg-surface border border-border rounded-xl flex flex-col h-full min-h-0">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.length === 0 && <p className="text-muted text-center mt-8">Nenhuma mensagem. Diga olá!</p>}
         {blocks.map((b) => {

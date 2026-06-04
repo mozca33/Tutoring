@@ -6,6 +6,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [
+      "Mensagens em 2 painéis (lista + conversa) com avatar, horário, busca e indicador de não lidas.",
+      "Recorrência de aulas simplificada: dias da semana + intervalo + nº de repetições, com tooltips.",
+      "Link de convite no domínio próprio (/convite); página de definir senha mais clara.",
       "Cadastro simplificado: sem tela de onboarding — login com Google já entra como professor (3 dias de teste).",
       "Aba 'Meus Alunos': convite por modal e clique no nome do aluno abre o chat com ele.",
       "Correção: crash da área logada por canais de notificação duplicados.",

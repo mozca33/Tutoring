@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon,
-  Keyboard, Clock, Video,
+  Keyboard, Clock, Video, Info,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { LESSON_STATUS as STATUS } from "@/lib/lesson";
@@ -301,14 +301,6 @@ function DayPopup({
 
 type Frequency = "daily" | "3x_week" | "weekly" | "monthly" | "custom";
 
-const FREQ_LABEL: Record<Frequency, string> = {
-  daily: "Todos os dias",
-  "3x_week": "3 vezes na semana",
-  weekly: "1 vez na semana",
-  monthly: "1 vez no mês",
-  custom: "Personalizado",
-};
-
 /** Gera as datas da recorrência a partir da data base. */
 function generateDates(base: Date, freq: Frequency, weekdays: number[], everyWeeks: number, count: number): Date[] {
   const out: Date[] = [];
@@ -377,7 +369,6 @@ function LessonDialog({
 
   // Recorrência
   const [recurring, setRecurring] = useState(false);
-  const [freq, setFreq] = useState<Frequency>("weekly");
   const [weekdays, setWeekdays] = useState<number[]>([initialDate.getDay()]);
   const [everyWeeks, setEveryWeeks] = useState(1);
   const [count, setCount] = useState(4);
@@ -392,9 +383,9 @@ function LessonDialog({
     const b = baseDate();
     if (!b) return [];
     if (!recurring) return [b];
-    return generateDates(b, freq, weekdays, everyWeeks, count);
+    return generateDates(b, "custom", weekdays, everyWeeks, count);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recurring, freq, weekdays, everyWeeks, count, date, time, manual, manualMode]);
+  }, [recurring, weekdays, everyWeeks, count, date, time, manual, manualMode]);
 
   function toggleWeekday(wd: number) {
     setWeekdays((prev) => prev.includes(wd) ? prev.filter((x) => x !== wd) : [...prev, wd]);
@@ -494,45 +485,40 @@ function LessonDialog({
 
                 {recurring && (
                   <div className="space-y-3 pl-1">
-                    <select className={inputClass} value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>
-                      {(Object.keys(FREQ_LABEL) as Frequency[]).map((f) => (
-                        <option key={f} value={f}>{FREQ_LABEL[f]}</option>
-                      ))}
-                    </select>
-
-                    {freq === "custom" && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted">Dias da semana</p>
-                        <div className="flex gap-1">
-                          {WEEKDAYS_MIN.map((w, idx) => (
-                            <button key={idx} type="button" onClick={() => toggleWeekday(idx)} title={WEEKDAYS[idx]}
-                              className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
-                                weekdays.includes(idx) ? "bg-indigo-600 text-white" : "border border-border hover:bg-background"
-                              }`}>
-                              {w}
-                            </button>
-                          ))}
-                        </div>
-                        <label className="flex items-center gap-2 text-sm">
-                          A cada
-                          <input type="number" min={1} max={12} value={everyWeeks} onChange={(e) => setEveryWeeks(parseInt(e.target.value) || 1)}
-                            className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-foreground" />
-                          semana(s)
-                        </label>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted">Dias da semana</p>
+                      <div className="flex gap-1">
+                        {WEEKDAYS_MIN.map((w, idx) => (
+                          <button key={idx} type="button" onClick={() => toggleWeekday(idx)} title={WEEKDAYS[idx]}
+                            className={`h-8 w-8 rounded-full text-xs font-medium transition-colors ${
+                              weekdays.includes(idx) ? "bg-indigo-600 text-white" : "border border-border hover:bg-background"
+                            }`}>
+                            {w}
+                          </button>
+                        ))}
                       </div>
-                    )}
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm">
+                      A cada
+                      <input type="number" min={1} max={12} value={everyWeeks} onChange={(e) => setEveryWeeks(parseInt(e.target.value) || 1)}
+                        className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-foreground" />
+                      semana(s)
+                      <span title="Intervalo entre as repetições. Ex.: 1 = toda semana; 2 = a cada 2 semanas." className="text-muted cursor-help"><Info size={14} /></span>
+                    </label>
 
                     <label className="flex items-center gap-2 text-sm">
                       Repetir
                       <input type="number" min={1} max={60} value={count} onChange={(e) => setCount(parseInt(e.target.value) || 1)}
                         className="w-16 rounded-lg border border-border bg-surface px-2 py-1 text-foreground" />
                       vez(es)
+                      <span title="Quantas aulas serão criadas no total (contando a primeira)." className="text-muted cursor-help"><Info size={14} /></span>
                     </label>
 
                     <p className="text-xs text-muted">
                       {dates.length > 0
                         ? `Serão criadas ${dates.length} aula(s). Última: ${dates[dates.length - 1].toLocaleDateString("pt-BR")}.`
-                        : "Defina os parâmetros da recorrência."}
+                        : "Selecione ao menos um dia da semana."}
                     </p>
                   </div>
                 )}
