@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     { onConflict: "teacher_id,student_id", ignoreDuplicates: true },
   );
 
-  // Gera o link de definição de senha (sem enviar e-mail)
+  // Gera o token (sem enviar e-mail) e monta um link no NOSSO domínio.
   let link: string | null = null;
   const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
     type: "recovery",
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     options: { redirectTo: `${SITE}/reset-password` },
   });
   if (linkErr) console.error("[invite-student] generateLink:", linkErr.message);
-  else link = linkData?.properties?.action_link ?? null;
+  else if (linkData?.properties?.hashed_token) link = `${SITE}/convite?th=${linkData.properties.hashed_token}`;
 
   return NextResponse.json({ ok: true, alreadyExisted, link });
 }

@@ -30,5 +30,6 @@ export async function POST(req: Request) {
   });
   if (error) { console.error("[resend-invite] generateLink:", error.message); return NextResponse.json({ error: "Não foi possível gerar o link." }, { status: 400 }); }
 
-  return NextResponse.json({ ok: true, link: linkData?.properties?.action_link ?? null });
+  const th = linkData?.properties?.hashed_token;
+  return NextResponse.json({ ok: true, link: th ? `${SITE}/convite?th=${th}` : null });
 }

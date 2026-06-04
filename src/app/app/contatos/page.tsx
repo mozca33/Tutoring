@@ -29,7 +29,7 @@ export default async function ContatosPage() {
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold">Meus alunos</h1>
-          <p className="text-muted">Pessoas vinculadas a você. Clique no nome para abrir o chat.</p>
+          <p className="text-muted">Pessoas vinculadas a você.</p>
         </div>
         {isTeacher && <InviteStudentModal />}
       </header>
