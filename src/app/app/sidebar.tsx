@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { applyPreferences, isDark, type Theme, type Density } from "@/lib/preferences";
+import NotificationsBell from "./notifications-bell";
 
 const NAV = [
   { href: "/app", label: "Aulas", icon: BookOpen, exact: true },
@@ -19,8 +20,9 @@ const NAV = [
 ];
 
 export default function Sidebar({
-  name, role, avatarUrl, teacherCode, theme, density,
+  userId, name, role, avatarUrl, teacherCode, theme, density,
 }: {
+  userId: string;
   name: string;
   role: string;
   avatarUrl: string | null;
@@ -148,7 +150,7 @@ export default function Sidebar({
           <Menu size={24} />
         </button>
         <Link href="/app" className="font-semibold text-indigo-600 dark:text-indigo-400 text-lg">Tutoring</Link>
-        <span className="w-6" />
+        <NotificationsBell userId={userId} />
       </div>
 
       {/* Overlay mobile */}
@@ -166,16 +168,19 @@ export default function Sidebar({
           <Link href="/app" className={`font-semibold text-indigo-600 dark:text-indigo-400 text-lg ${collapsed ? "lg:hidden" : ""}`}>
             Tutoring
           </Link>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:inline-flex text-muted hover:text-foreground"
-            aria-label="Recolher menu"
-          >
-            {collapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
-          </button>
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden text-foreground" aria-label="Fechar menu">
-            <X size={22} />
-          </button>
+          <div className="flex items-center gap-1">
+            {!collapsed && <span className="hidden lg:inline-flex"><NotificationsBell userId={userId} /></span>}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:inline-flex text-muted hover:text-foreground"
+              aria-label="Recolher menu"
+            >
+              {collapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
+            </button>
+            <button onClick={() => setMobileOpen(false)} className="lg:hidden text-foreground" aria-label="Fechar menu">
+              <X size={22} />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto py-3">{NavList}</div>
         {Footer}

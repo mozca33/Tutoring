@@ -10,9 +10,9 @@ Estado do que falta, organizado por **o que depende de quê**. Marque itens conf
 - ~~Paleta de cores ampliada.~~
 - Falta (opcional): cor personalizada (color picker livre).
 
-### A2. Centro de notificações persistente
-- Sino na sidebar com contagem de não lidas e lista (hoje só há toasts efêmeros).
-- **Como:** tabela `notifications` (ou derivar de `messages` não lidas com coluna `read_at`); componente na `sidebar.tsx`; marcar lido ao abrir.
+### A2. Centro de notificações persistente ✅ (feito)
+- Sino na sidebar/topbar com contador e lista (mensagens + eventos de aula). Não-lidas via `localStorage` (`notif_seen`).
+- Falta (opcional): persistir "lido" no servidor (multi-dispositivo) com coluna `read_at`.
 
 ### A3. Granularidade do changelog
 - Quebrar entradas por versão/semver e datar com mais precisão.

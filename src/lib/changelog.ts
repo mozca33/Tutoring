@@ -6,6 +6,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [
+      "Centro de notificações: sino na barra lateral com contador de não lidas e lista (mensagens e eventos de aula).",
       "Quadro: borracha, seletor de espessura (P/M/G) e paleta ampliada de cores.",
       "Cadastro do aluno: link de acesso robusto (a página valida o link antes de definir a senha).",
       "Quadro colaborativo ao vivo (estilo Google Slides): caneta, seta, círculo e texto, sincronizados ponto a ponto, com persistência por aula.",

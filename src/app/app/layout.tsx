@@ -25,6 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <PreferencesProvider theme={theme} density={density}>
       <div className="min-h-screen bg-background text-foreground lg:flex">
         <Sidebar
+          userId={user.id}
           name={profile?.full_name ?? ""}
           role={profile?.role ?? "student"}
           avatarUrl={profile?.avatar_url ?? null}
