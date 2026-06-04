@@ -5,18 +5,19 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import {
-  Pencil, ArrowUpRight, Circle, Type, Undo2, Trash2, X, ChevronLeft, ChevronRight, ImageIcon, Lock, Unlock,
+  Pencil, ArrowUpRight, Circle, Type, Undo2, Trash2, X, ChevronLeft, ChevronRight, ImageIcon, Lock, Unlock, Eraser,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-type Tool = "pen" | "arrow" | "ellipse" | "text";
-type StrokeData = { points?: number[][]; x1?: number; y1?: number; x2?: number; y2?: number; text?: string };
-type Stroke = { id: string; author_id: string; tool: Tool; color: string; data: StrokeData };
+type Tool = "pen" | "arrow" | "ellipse" | "text" | "eraser";
+type StrokeData = { points?: number[][]; x1?: number; y1?: number; x2?: number; y2?: number; text?: string; w?: number };
+type Stroke = { id: string; author_id: string; tool: Exclude<Tool, "eraser">; color: string; data: StrokeData };
 type Material = { id: string; file_name: string; storage_path: string; lessonTitle?: string | null };
 
-const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#eab308", "#111827", "#ffffff"];
+const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#111827", "#ffffff"];
+const WIDTHS: { label: string; w: number }[] = [{ label: "P", w: 2 }, { label: "M", w: 4 }, { label: "G", w: 7 }];
 
 export default function LessonBoard({
   lessonId, currentUserId, isTeacher, lessonActive, onClose,
@@ -34,6 +35,7 @@ export default function LessonBoard({
 
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#ef4444");
+  const [width, setWidth] = useState(4);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [draft, setDraft] = useState<Stroke | null>(null);
   const [live, setLive] = useState<Record<string, Stroke>>({});
@@ -124,11 +126,13 @@ export default function LessonBoard({
     if (!canDraw) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     const [x, y] = pt(e);
+    if (tool === "eraser") { eraseAt(x, y); return; }
     if (tool === "text") { setTextDraft({ x, y, value: "" }); return; }
     const id = crypto.randomUUID();
-    const base: Stroke = { id, author_id: currentUserId, tool, color, data: {} };
-    if (tool === "pen") base.data = { points: [[x, y]] };
-    else base.data = { x1: x, y1: y, x2: x, y2: y };
+    const t = tool as Exclude<Tool, "eraser">;
+    const base: Stroke = { id, author_id: currentUserId, tool: t, color, data: { w: width } };
+    if (t === "pen") base.data = { points: [[x, y]], w: width };
+    else base.data = { x1: x, y1: y, x2: x, y2: y, w: width };
     setDraft(base);
   }
 
@@ -136,7 +140,7 @@ export default function LessonBoard({
     if (!draft) return;
     const [x, y] = pt(e);
     let next: Stroke;
-    if (draft.tool === "pen") next = { ...draft, data: { points: [...(draft.data.points ?? []), [x, y]] } };
+    if (draft.tool === "pen") next = { ...draft, data: { points: [...(draft.data.points ?? []), [x, y]], w: draft.data.w } };
     else next = { ...draft, data: { ...draft.data, x2: x, y2: y } };
     setDraft(next);
     broadcast(next);
@@ -159,6 +163,21 @@ export default function LessonBoard({
     const s: Stroke = { id: crypto.randomUUID(), author_id: currentUserId, tool: "text", color, data: { x1: textDraft.x, y1: textDraft.y, text: textDraft.value.trim() } };
     setTextDraft(null);
     await commit(s);
+  }
+
+  function strokeHit(s: Stroke, x: number, y: number): boolean {
+    const near = (px: number, py: number, th = 0.025) => Math.hypot(px - x, py - y) < th;
+    if (s.tool === "pen" && s.data.points) return s.data.points.some(([px, py]) => near(px, py));
+    const x1 = s.data.x1 ?? 0, y1 = s.data.y1 ?? 0, x2 = s.data.x2 ?? x1, y2 = s.data.y2 ?? y1;
+    if (s.tool === "text") return near(x1, y1, 0.06);
+    return x >= Math.min(x1, x2) - 0.02 && x <= Math.max(x1, x2) + 0.02 && y >= Math.min(y1, y2) - 0.02 && y <= Math.max(y1, y2) + 0.02;
+  }
+
+  async function eraseAt(x: number, y: number) {
+    const hit = [...strokes].reverse().find((s) => (s.author_id === currentUserId || isTeacher) && strokeHit(s, x, y));
+    if (!hit) return;
+    setStrokes((prev) => prev.filter((s) => s.id !== hit.id));
+    await createClient().from("board_strokes").delete().eq("id", hit.id);
   }
 
   async function undo() {
@@ -185,15 +204,16 @@ export default function LessonBoard({
   // ===== Render helpers =====
   function renderStroke(s: Stroke, W: number, H: number, key: string) {
     const c = s.color;
+    const sw = s.data.w ?? 3;
     if (s.tool === "pen" && s.data.points) {
-      return <polyline key={key} points={s.data.points.map(([x, y]) => `${x * W},${y * H}`).join(" ")} fill="none" stroke={c} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />;
+      return <polyline key={key} points={s.data.points.map(([x, y]) => `${x * W},${y * H}`).join(" ")} fill="none" stroke={c} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round" />;
     }
     if (s.tool === "arrow") {
-      return <line key={key} x1={(s.data.x1 ?? 0) * W} y1={(s.data.y1 ?? 0) * H} x2={(s.data.x2 ?? 0) * W} y2={(s.data.y2 ?? 0) * H} stroke={c} strokeWidth={3} markerEnd={`url(#ah-${c.replace("#", "")})`} />;
+      return <line key={key} x1={(s.data.x1 ?? 0) * W} y1={(s.data.y1 ?? 0) * H} x2={(s.data.x2 ?? 0) * W} y2={(s.data.y2 ?? 0) * H} stroke={c} strokeWidth={sw} markerEnd={`url(#ah-${c.replace("#", "")})`} />;
     }
     if (s.tool === "ellipse") {
       const x1 = (s.data.x1 ?? 0) * W, y1 = (s.data.y1 ?? 0) * H, x2 = (s.data.x2 ?? 0) * W, y2 = (s.data.y2 ?? 0) * H;
-      return <ellipse key={key} cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} rx={Math.abs(x2 - x1) / 2} ry={Math.abs(y2 - y1) / 2} fill="none" stroke={c} strokeWidth={3} />;
+      return <ellipse key={key} cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} rx={Math.abs(x2 - x1) / 2} ry={Math.abs(y2 - y1) / 2} fill="none" stroke={c} strokeWidth={sw} />;
     }
     if (s.tool === "text") {
       return <text key={key} x={(s.data.x1 ?? 0) * W} y={(s.data.y1 ?? 0) * H} fill={c} fontSize={18} fontWeight={600}>{s.data.text}</text>;
@@ -227,7 +247,16 @@ export default function LessonBoard({
             {toolBtn("arrow", <ArrowUpRight size={18} />, "Seta")}
             {toolBtn("ellipse", <Circle size={18} />, "Círculo")}
             {toolBtn("text", <Type size={18} />, "Texto")}
+            {toolBtn("eraser", <Eraser size={18} />, "Borracha")}
             <div className="flex items-center gap-1 ml-1">
+              {WIDTHS.map((wd) => (
+                <button key={wd.w} onClick={() => setWidth(wd.w)} title={`Espessura ${wd.label}`}
+                  className={`h-7 w-7 rounded-lg grid place-items-center text-xs ${width === wd.w ? "bg-indigo-600 text-white" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                  {wd.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 ml-1 flex-wrap max-w-[12rem]">
               {COLORS.map((c) => (
                 <button key={c} onClick={() => setColor(c)} style={{ background: c }}
                   className={`h-6 w-6 rounded-full border ${color === c ? "ring-2 ring-white" : "border-white/30"}`} />

@@ -6,6 +6,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [
+      "Quadro: borracha, seletor de espessura (P/M/G) e paleta ampliada de cores.",
+      "Cadastro do aluno: link de acesso robusto (a página valida o link antes de definir a senha).",
       "Quadro colaborativo ao vivo (estilo Google Slides): caneta, seta, círculo e texto, sincronizados ponto a ponto, com persistência por aula.",
       "Fundo do quadro: branco, imagem ou página de PDF — escolhe qualquer material já enviado (de qualquer aula).",
       "Permissões do quadro: professor abre → aluno recebe popup; aluno em só-leitura até o professor liberar; só o professor limpa.",
