@@ -9,6 +9,7 @@ import LessonActions from "./lesson-actions";
 import RecordingSection from "./recording-section";
 import LessonChat from "./lesson-chat";
 import BoardLauncher from "./board-launcher";
+import { statusInfo } from "@/lib/lesson";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,10 +58,9 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
               {new Date(lesson.scheduled_at).toLocaleString("pt-BR")} · {lesson.duration_minutes} min ·{" "}
               com {lesson.teacher?.full_name} / {lesson.student?.full_name}
             </p>
-            {lesson.status === "cancelled" && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Cancelada</span>}
-            {lesson.status === "completed" && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Concluída</span>}
-            {lesson.status === "rescheduled" && <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">Remarcada</span>}
-            {lesson.status === "live" && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Ao vivo</span>}
+            {lesson.status !== "scheduled" && (
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo(lesson.status).chip}`}>{statusInfo(lesson.status).label}</span>
+            )}
           </div>
           {lesson.description && <p className="text-slate-700 mt-2">{lesson.description}</p>}
           {lesson.summary && (

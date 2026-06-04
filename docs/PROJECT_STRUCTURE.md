@@ -65,7 +65,7 @@ Buckets Storage: `lesson-files` (privado), `avatars` (público), `recordings` (p
 - Rodar: `npm test` (CI) ou `npm run test:watch`.
 - Testes colocados ao lado do código: `src/**/*.test.ts(x)` (excluídos do build do Next).
 - Cobrem libs puras (validation, subscription, uploads, preferences, email, auth-redirect, changelog) e componentes (PasswordInput, GoogleButton, FileActionsMenu).
-- Para fluxos com Supabase/telas completas, o próximo passo é E2E (Playwright).
+- **E2E (Playwright)**: `npm run test:e2e` (roda contra `E2E_BASE_URL`, padrão produção). Specs em `e2e/`. Cobre landing, login, signup, redirect de auth e erro de credencial.
 
 ## Padrões
 - **RLS** em tudo; participantes da aula leem/escrevem o que lhes cabe.

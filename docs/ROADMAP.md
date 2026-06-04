@@ -2,6 +2,22 @@
 
 Estado do que falta, organizado por **o que depende de quê**. Marque itens conforme forem concluídos e registre no `src/lib/changelog.ts`.
 
+## ✅ Concluído (rodada de melhorias)
+- A1 quadro (borracha/espessura/cores), A2 notificações.
+- Segurança: RLS do quadro (board_student_allowed), funções definer protegidas, avatares sem listagem, rate limit.
+- Confiabilidade: webhook do LiveKit (gravação), toast de reconexão.
+- Produto: portal Stripe, plano anual, lembrete de aula (cron).
+- Performance: N+1 das notificações, avatares com next/image.
+- Qualidade: status das aulas centralizado (`src/lib/lesson.ts`), testes unitários (Vitest, 60) + E2E (Playwright).
+
+## ⏳ Pendente (precisa de você / serviço externo)
+- **Leaked password protection** (Supabase → Auth, 1 clique).
+- **Webhook do LiveKit**: cadastrar a URL `…/api/livekit-webhook` em LiveKit Cloud → Webhooks.
+- **Sentry** (monitoramento): criar conta + DSN; depois instalo `@sentry/nextjs`.
+- **Stripe Customer Portal**: ativar no dashboard (Settings → Billing) se necessário.
+- **Resend domínio**, **Stripe live**, **env vars na Vercel** (incl. `STRIPE_PRICE_ID_ANNUAL`, `ADMIN_EMAILS`).
+- PPT/DOCX no quadro, transcrição de aulas longas, busca, paginação, i18n/a11y.
+
 ## A) Buildável agora (sem credenciais)
 
 ### A1. Polimento do quadro colaborativo ✅ (feito)

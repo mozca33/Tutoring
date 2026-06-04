@@ -6,7 +6,11 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [
-      "Testes unitários (Vitest + Testing Library): validação, assinatura/trial, uploads, preferências, e-mail, redirects e componentes (60 testes).",
+      "Segurança: permissão do quadro imposta no servidor (RLS), funções internas protegidas, rate limit em rotas sensíveis.",
+      "Confiabilidade: webhook do LiveKit marca a gravação como concluída/falha; aviso de reconexão na sala.",
+      "Assinatura: plano anual, portal do Stripe (gerenciar/cancelar) e lembrete de aula automático.",
+      "Performance: notificações sem consultas repetidas (N+1); avatares otimizados.",
+      "Testes: unitários (Vitest, 60) e E2E (Playwright) das telas públicas e de auth.",
       "Centro de notificações: sino na barra lateral com contador de não lidas e lista (mensagens e eventos de aula).",
       "Quadro: borracha, seletor de espessura (P/M/G) e paleta ampliada de cores.",
       "Cadastro do aluno: link de acesso robusto (a página valida o link antes de definir a senha).",
