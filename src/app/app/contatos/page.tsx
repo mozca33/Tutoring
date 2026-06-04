@@ -1,7 +1,9 @@
+import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import AddContactForm from "./add-contact-form";
 import RemoveContactButton from "./remove-contact-button";
 import ResendInviteButton from "./resend-invite-button";
+import InviteStudentModal from "./invite-student-modal";
 
 type Person = { id: string; full_name: string; email: string | null; invited_pending?: boolean };
 type Rel = { id: string; teacher: Person | null; student: Person | null };
@@ -24,37 +26,34 @@ export default async function ContatosPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold">Contatos</h1>
-        <p className="text-muted">Pessoas vinculadas a você.</p>
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">Meus alunos</h1>
+          <p className="text-muted">Pessoas vinculadas a você. Clique no nome para abrir o chat.</p>
+        </div>
+        {isTeacher && <InviteStudentModal />}
       </header>
-
-      {isTeacher && (
-        <section className="bg-surface border border-border rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-1">Convidar aluno</h2>
-          <p className="text-sm text-muted mb-3">Informe o nome e o e-mail. O aluno recebe um link para criar a senha — a conta já fica vinculada a você.</p>
-          <AddContactForm />
-        </section>
-      )}
 
       {(isTeacher || teaching.length > 0) && (
         <section>
-          <h2 className="text-lg font-semibold mb-3">Meus alunos</h2>
           {teaching.length === 0 ? (
-            <p className="text-muted">Nenhum aluno ainda. Convide pelo formulário acima.</p>
+            <p className="text-muted">Nenhum aluno ainda. Use o botão <strong>Convidar aluno</strong>.</p>
           ) : (
             <ul className="grid gap-3">
               {teaching.map((r) => r.student && (
                 <li key={r.id} className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
+                  <Link href={`/app/chat/${r.student.id}`} className="min-w-0 group flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{r.student.full_name}</p>
+                      <p className="font-medium truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{r.student.full_name}</p>
                       {r.student.invited_pending && <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-medium shrink-0">Pendente</span>}
+                      <MessageSquare size={14} className="text-muted shrink-0" />
                     </div>
                     <p className="text-sm text-muted truncate">{r.student.email}</p>
+                  </Link>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <RemoveContactButton relationshipId={r.id} />
                     {r.student.invited_pending && <ResendInviteButton studentId={r.student.id} />}
                   </div>
-                  <RemoveContactButton relationshipId={r.id} />
                 </li>
               ))}
             </ul>
@@ -68,8 +67,10 @@ export default async function ContatosPage() {
           <ul className="grid gap-3">
             {learning.map((r) => r.teacher && (
               <li key={r.id} className="bg-surface border border-border rounded-lg p-4">
-                <p className="font-medium">{r.teacher.full_name}</p>
-                <p className="text-sm text-muted">{r.teacher.email}</p>
+                <Link href={`/app/chat/${r.teacher.id}`} className="group">
+                  <p className="font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{r.teacher.full_name}</p>
+                  <p className="text-sm text-muted">{r.teacher.email}</p>
+                </Link>
               </li>
             ))}
           </ul>

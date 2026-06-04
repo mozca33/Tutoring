@@ -16,8 +16,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", user.id)
     .single();
 
-  if (profile && !profile.role_confirmed) redirect("/onboarding");
-
   const theme = (profile?.theme ?? "system") as Theme;
   const density = (profile?.density ?? "medium") as Density;
 

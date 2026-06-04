@@ -16,7 +16,7 @@ const NAV = [
   { href: "/app", label: "Aulas", icon: BookOpen, exact: true },
   { href: "/app/materiais", label: "Materiais", icon: FolderOpen },
   { href: "/app/chat", label: "Mensagens", icon: MessageSquare },
-  { href: "/app/contatos", label: "Contatos", icon: Users },
+  { href: "/app/contatos", label: "Meus Alunos", icon: Users },
   { href: "/app/perfil", label: "Perfil", icon: User },
 ];
 
