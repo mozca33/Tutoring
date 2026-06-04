@@ -6,6 +6,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [
+      "Cadastro simplificado: sem tela de onboarding — login com Google já entra como professor (3 dias de teste).",
+      "Aba 'Meus Alunos': convite por modal e clique no nome do aluno abre o chat com ele.",
+      "Correção: crash da área logada por canais de notificação duplicados.",
       "Segurança: permissão do quadro imposta no servidor (RLS), funções internas protegidas, rate limit em rotas sensíveis.",
       "Confiabilidade: webhook do LiveKit marca a gravação como concluída/falha; aviso de reconexão na sala.",
       "Assinatura: plano anual, portal do Stripe (gerenciar/cancelar) e lembrete de aula automático.",
