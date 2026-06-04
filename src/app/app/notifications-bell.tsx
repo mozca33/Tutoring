@@ -35,7 +35,18 @@ export default function NotificationsBell({ userId }: { userId: string }) {
       const { data } = await supabase.from("messages")
         .select("id, sender_id, content, kind, event_type, lesson_id, created_at")
         .eq("recipient_id", userId).order("created_at", { ascending: false }).limit(20);
-      if (data) setItems(await Promise.all(data.map(toItem)));
+      if (!data) return;
+      // Busca todos os perfis dos remetentes em UMA query (evita N+1).
+      const ids = [...new Set(data.map((m) => m.sender_id))];
+      const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+      const nameById = new Map((profs ?? []).map((p) => [p.id, p.full_name]));
+      setItems(data.map((m) => {
+        const isEvent = m.kind === "event";
+        const href = isEvent
+          ? (m.event_type === "completed" ? `/app/materiais?aula=${m.lesson_id}` : `/app/lessons/${m.lesson_id}`)
+          : `/app/chat/${m.sender_id}`;
+        return { id: m.id, title: isEvent ? "Atualização de aula" : (nameById.get(m.sender_id) ?? "Mensagem"), preview: previewOf(m.content), href, isEvent, created_at: m.created_at };
+      }));
     })();
 
     const ch = supabase.channel(`bell:${userId}`)

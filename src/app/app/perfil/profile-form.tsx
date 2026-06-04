@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Camera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -96,8 +97,7 @@ export default function ProfileForm({ initial }: { initial: Initial }) {
       {/* Avatar */}
       <div className="bg-surface border border-border rounded-xl p-6 flex items-center gap-4">
         {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="Foto de perfil" className="h-20 w-20 rounded-full object-cover" />
+          <Image src={avatarUrl} alt="Foto de perfil" width={80} height={80} className="h-20 w-20 rounded-full object-cover" />
         ) : (
           <span className="h-20 w-20 rounded-full bg-indigo-600 text-white grid place-items-center text-2xl font-semibold">
             {initials || "?"}

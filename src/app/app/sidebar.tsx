@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen, MessageSquare, Users, FolderOpen, User, CreditCard,
@@ -100,8 +101,7 @@ export default function Sidebar({
         className={`flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-background transition-colors ${collapsed ? "lg:justify-center" : ""}`}
       >
         {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt={name} className="rounded-full object-cover h-9 w-9 shrink-0" />
+          <Image src={avatarUrl} alt={name} width={36} height={36} className="rounded-full object-cover h-9 w-9 shrink-0" />
         ) : (
           <span className="h-9 w-9 shrink-0 rounded-full bg-indigo-600 text-white grid place-items-center text-sm font-semibold">
             {initials || "?"}
