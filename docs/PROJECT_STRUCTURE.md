@@ -60,6 +60,13 @@ supabase/migrations/         0001..0019 (schema, RLS, realtime, buckets, funçõ
 `lesson_files`, `homeworks`, `lesson_comments`, `file_annotations`, `board_strokes`.
 Buckets Storage: `lesson-files` (privado), `avatars` (público), `recordings` (privado).
 
+## Testes
+- **Vitest + Testing Library** (jsdom). Config: `vitest.config.ts` + `vitest.setup.ts`.
+- Rodar: `npm test` (CI) ou `npm run test:watch`.
+- Testes colocados ao lado do código: `src/**/*.test.ts(x)` (excluídos do build do Next).
+- Cobrem libs puras (validation, subscription, uploads, preferences, email, auth-redirect, changelog) e componentes (PasswordInput, GoogleButton, FileActionsMenu).
+- Para fluxos com Supabase/telas completas, o próximo passo é E2E (Playwright).
+
 ## Padrões
 - **RLS** em tudo; participantes da aula leem/escrevem o que lhes cabe.
 - **Realtime** (Supabase) para chat, materiais, comentários, lição, anotações e quadro (+ broadcast no quadro).
