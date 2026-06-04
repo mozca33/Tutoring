@@ -30,7 +30,10 @@ Este projeto usa três serviços. O assistente gerencia os três:
 - **LiveKit** (vídeo): projeto `tutoring-5qr2r5bc`. **Sem MCP** — gerenciar via dashboard e `.env.local`.
 
 ## Variáveis de ambiente (necessárias em `.env.local` e na Vercel)
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
+Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_S3_ACCESS_KEY`, `SUPABASE_S3_SECRET`, `SUPABASE_S3_ENDPOINT`, `SUPABASE_S3_REGION`, `SUPABASE_S3_BUCKET`.
+LiveKit: `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
+Stripe: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_PRICE_ID`, `STRIPE_PRICE_ID_ANNUAL`, `STRIPE_WEBHOOK_SECRET`.
+Outros: `RESEND_API_KEY`, `RESEND_FROM`, `GEMINI_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAILS`.
 
 ## Após mudar a URL de produção
 Atualizar no Supabase → Auth → URL Configuration: Site URL + Redirect URLs (`https://<dominio>/**`).
