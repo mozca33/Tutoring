@@ -34,6 +34,8 @@ Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE
 LiveKit: `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL`.
 Stripe: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_PRICE_ID`, `STRIPE_PRICE_ID_ANNUAL`, `STRIPE_WEBHOOK_SECRET`.
 Outros: `RESEND_API_KEY`, `RESEND_FROM`, `GEMINI_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAILS`.
+Monitoramento (Sentry, opcional — plano grátis): `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`.
+  Sem essas vars o Sentry fica desligado (no-op). Defina `SENTRY_DSN`+`NEXT_PUBLIC_SENTRY_DSN` (mesmo DSN) para ativar captura de erros server+client; `SENTRY_AUTH_TOKEN`+`SENTRY_ORG`+`SENTRY_PROJECT` habilitam upload de sourcemaps no build.
 
 ## Após mudar a URL de produção
 Atualizar no Supabase → Auth → URL Configuration: Site URL + Redirect URLs (`https://<dominio>/**`).

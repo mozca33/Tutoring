@@ -6,6 +6,8 @@ Plataforma SaaS de aulas particulares (professor ↔ aluno). **Next.js 16 (App R
 
 ```
 src/
+  instrumentation.ts          Sentry server/edge (no-op sem SENTRY_DSN) + onRequestError
+  instrumentation-client.ts   Sentry client (no-op sem NEXT_PUBLIC_SENTRY_DSN)
   app/
     page.tsx                 Landing pública
     login/ signup/           Autenticação (signup = só professor)
@@ -29,7 +31,8 @@ src/
       message-notifier.tsx   Toasts de mensagem e de evento de aula
       materiais/             Lista de materiais (todos ou ?aula=id) + preview/anotar
       chat/[userId]/         Conversa (timeline com eventos, blocos por dia/aula, @aula)
-      contatos/              Convidar aluno (link) + lista com pendente/reenviar
+      contatos/              "Meus Alunos": cards (avatar, stats, ações) + convite por modal
+      alunos/[id]/           Hub do aluno: métricas, histórico de aulas e de lições
       perfil/                Editar perfil, avatar, tema, densidade
       assinatura/            Planos + checkout Stripe
       lessons/[id]/          Página da AULA (hub):

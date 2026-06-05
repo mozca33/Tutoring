@@ -12,6 +12,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Ações rápidas para editar/gerenciar a aula direto da lista de próximas aulas e do popup do dia.",
       "Dashboard sem scroll externo: o calendário ocupa a altura da tela; lista de próximas aulas vai até o fim com scrollbar estilizada.",
       "Notificação (toast) reposicionada para o topo, com animação de entrada.",
+      "Monitoramento de erros opcional via Sentry (plano grátis), ativado por variável de ambiente.",
     ],
   },
   {
