@@ -16,6 +16,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   },
   {
     date: "2026-06-05",
+    title: "Acessibilidade e base de i18n",
+    items: [
+      "Link 'pular para o conteúdo', foco visível por teclado e respeito a 'menos movimento'.",
+      "Rótulos de leitor de tela (aria-label/aria-current) na navegação e ações de conversa.",
+      "Base de internacionalização (i18n) centralizando textos da navegação para futuros idiomas.",
+    ],
+  },
+  {
+    date: "2026-06-05",
     title: "Meus Alunos, atalhos de agenda e ajustes de tela",
     items: [
       "Meus Alunos virou painel de cards: avatar, status, mini-stats (aulas, próxima, lições pendentes) e ações rápidas (Agendar, Mensagem).",

@@ -21,6 +21,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <PreferencesProvider theme={theme} density={density}>
+      <a href="#conteudo"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-indigo-600 focus:text-white focus:px-4 focus:py-2 focus:text-sm">
+        Pular para o conteúdo
+      </a>
       <div className="min-h-screen bg-background text-foreground lg:flex">
         <Sidebar
           userId={user.id}
@@ -31,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           theme={theme}
           density={density}
         />
-        <main className="flex-1 min-w-0 px-4 sm:px-6 py-8">{children}</main>
+        <main id="conteudo" className="flex-1 min-w-0 px-4 sm:px-6 py-8">{children}</main>
       </div>
       <MessageNotifier userId={user.id} />
     </PreferencesProvider>

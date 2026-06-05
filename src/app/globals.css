@@ -50,6 +50,22 @@ body {
 .scroll-thin::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .scroll-thin::-webkit-scrollbar-track { background: transparent; }
 
+/* Respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Foco visível consistente para navegação por teclado */
+:focus-visible {
+  outline: 2px solid #6366f1; /* indigo-500 */
+  outline-offset: 2px;
+}
+
 /* Toast de notificação: entra deslizando do topo */
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }

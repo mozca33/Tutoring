@@ -44,7 +44,7 @@ export default function MessageNotifier({ userId }: { userId: string }) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[60] space-y-2 w-80 max-w-[calc(100vw-2rem)]">
+    <div role="status" aria-live="polite" className="fixed top-4 right-4 z-[60] space-y-2 w-80 max-w-[calc(100vw-2rem)]">
       {toasts.map((t) => (
         <button key={t.id}
           onClick={() => { setToasts((prev) => prev.filter((x) => x.id !== t.id)); router.push(t.href); }}

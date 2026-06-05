@@ -165,12 +165,12 @@ export default function MessagesView({ currentUserId, conversations }: { current
         </button>
         {/* Ações: fixar / arquivar */}
         <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          <button title={c.pinned ? "Desafixar" : "Fixar"} disabled={busy === c.id}
+          <button title={c.pinned ? "Desafixar" : "Fixar"} aria-label={c.pinned ? `Desafixar conversa com ${c.name}` : `Fixar conversa com ${c.name}`} disabled={busy === c.id}
             onClick={() => toggleState(c, "pinned")}
             className="p-1 rounded-md bg-surface border border-border hover:bg-background disabled:opacity-50">
             {c.pinned ? <PinOff size={13} /> : <Pin size={13} />}
           </button>
-          <button title={c.archived ? "Desarquivar" : "Arquivar"} disabled={busy === c.id}
+          <button title={c.archived ? "Desarquivar" : "Arquivar"} aria-label={c.archived ? `Desarquivar conversa com ${c.name}` : `Arquivar conversa com ${c.name}`} disabled={busy === c.id}
             onClick={() => toggleState(c, "archived")}
             className="p-1 rounded-md bg-surface border border-border hover:bg-background disabled:opacity-50">
             {c.archived ? <ArchiveRestore size={13} /> : <Archive size={13} />}

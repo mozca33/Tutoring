@@ -10,14 +10,15 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { applyPreferences, isDark, type Theme, type Density } from "@/lib/preferences";
+import { t } from "@/lib/i18n";
 import NotificationsBell from "./notifications-bell";
 
 const NAV = [
-  { href: "/app", label: "Aulas", icon: BookOpen, exact: true },
-  { href: "/app/materiais", label: "Materiais", icon: FolderOpen },
-  { href: "/app/chat", label: "Mensagens", icon: MessageSquare },
-  { href: "/app/contatos", label: "Meus Alunos", icon: Users },
-  { href: "/app/perfil", label: "Perfil", icon: User },
+  { href: "/app", label: t("nav.lessons"), icon: BookOpen, exact: true },
+  { href: "/app/materiais", label: t("nav.materials"), icon: FolderOpen },
+  { href: "/app/chat", label: t("nav.messages"), icon: MessageSquare },
+  { href: "/app/contatos", label: t("nav.students"), icon: Users },
+  { href: "/app/perfil", label: t("nav.profile"), icon: User },
 ];
 
 export default function Sidebar({
@@ -65,11 +66,11 @@ export default function Sidebar({
 
   const nav = [...NAV];
   if (role === "teacher") {
-    nav.splice(4, 0, { href: "/app/assinatura", label: "Assinatura", icon: CreditCard });
+    nav.splice(4, 0, { href: "/app/assinatura", label: t("nav.subscription"), icon: CreditCard });
   }
 
   const NavList = (
-    <nav className="flex-1 px-2 space-y-1">
+    <nav aria-label="Navegação principal" className="flex-1 px-2 space-y-1">
       {nav.map(({ href, label, icon: Icon, exact }) => {
         const active = isActive(href, exact);
         return (
@@ -78,6 +79,7 @@ export default function Sidebar({
             href={href}
             onClick={() => setMobileOpen(false)}
             title={collapsed ? label : undefined}
+            aria-current={active ? "page" : undefined}
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               active
                 ? "bg-indigo-600 text-white"
@@ -109,7 +111,7 @@ export default function Sidebar({
         )}
         <span className={`min-w-0 ${collapsed ? "lg:hidden" : ""}`}>
           <span className="block text-sm font-medium truncate">{name}</span>
-          <span className="block text-xs text-muted">{role === "teacher" ? "Professor" : "Aluno"}</span>
+          <span className="block text-xs text-muted">{role === "teacher" ? t("common.teacher") : t("common.student")}</span>
         </span>
       </Link>
 
@@ -128,7 +130,7 @@ export default function Sidebar({
           className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-foreground hover:bg-background transition-colors"
         >
           {dark ? <Sun size={18} /> : <Moon size={18} />}
-          <span className={collapsed ? "lg:hidden" : ""}>{dark ? "Claro" : "Escuro"}</span>
+          <span className={collapsed ? "lg:hidden" : ""}>{dark ? t("common.light") : t("common.dark")}</span>
         </button>
         <button
           onClick={signOut}
@@ -136,7 +138,7 @@ export default function Sidebar({
           className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-background transition-colors"
         >
           <LogOut size={18} />
-          <span className={collapsed ? "lg:hidden" : ""}>Sair</span>
+          <span className={collapsed ? "lg:hidden" : ""}>{t("common.signout")}</span>
         </button>
       </div>
     </div>
