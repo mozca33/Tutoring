@@ -44,11 +44,11 @@ export default function MessageNotifier({ userId }: { userId: string }) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[60] space-y-2 w-80 max-w-[calc(100vw-2rem)]">
+    <div className="fixed top-4 right-4 z-[60] space-y-2 w-80 max-w-[calc(100vw-2rem)]">
       {toasts.map((t) => (
         <button key={t.id}
           onClick={() => { setToasts((prev) => prev.filter((x) => x.id !== t.id)); router.push(t.href); }}
-          className="w-full text-left bg-surface border border-border rounded-xl shadow-xl p-3 flex items-start gap-3 hover:bg-background transition-colors">
+          className="animate-toast-in w-full text-left bg-surface border border-border rounded-xl shadow-xl p-3 flex items-start gap-3 hover:bg-background transition-colors">
           <span className={`h-9 w-9 shrink-0 rounded-full text-white grid place-items-center ${t.isEvent ? "bg-violet-600" : "bg-indigo-600"}`}>
             {t.isEvent ? <CalendarClock size={16} /> : <MessageSquare size={16} />}
           </span>

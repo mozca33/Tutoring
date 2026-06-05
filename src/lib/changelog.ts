@@ -3,6 +3,18 @@ export type ChangelogEntry = { date: string; title: string; items: string[] };
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-06-05",
+    title: "Meus Alunos, atalhos de agenda e ajustes de tela",
+    items: [
+      "Meus Alunos virou painel de cards: avatar, status, mini-stats (aulas, próxima, lições pendentes) e ações rápidas (Agendar, Mensagem).",
+      "Página do aluno (/app/alunos/[id]): métricas, histórico de aulas e de lições de casa.",
+      "Atalho 'Agendar' já abre o modal de nova aula com o aluno pré-selecionado.",
+      "Ações rápidas para editar/gerenciar a aula direto da lista de próximas aulas e do popup do dia.",
+      "Dashboard sem scroll externo: o calendário ocupa a altura da tela; lista de próximas aulas vai até o fim com scrollbar estilizada.",
+      "Notificação (toast) reposicionada para o topo, com animação de entrada.",
+    ],
+  },
+  {
     date: "2026-06-03",
     title: "Quadro colaborativo, mensagens e cadastro por convite",
     items: [

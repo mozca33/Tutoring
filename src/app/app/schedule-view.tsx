@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon,
-  Keyboard, Clock, Video, Info,
+  Keyboard, Clock, Video, Info, Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { LESSON_STATUS as STATUS } from "@/lib/lesson";
@@ -41,6 +41,7 @@ export default function ScheduleView({
   locked = false,
   trialDaysLeft = null,
   subscriptionStatus = "none",
+  presetStudentId,
 }: {
   lessons: Lesson[];
   students: { id: string; full_name: string }[];
@@ -48,12 +49,19 @@ export default function ScheduleView({
   locked?: boolean;
   trialDaysLeft?: number | null;
   subscriptionStatus?: string;
+  presetStudentId?: string;
 }) {
   const router = useRouter();
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [popup, setPopup] = useState<Popup | null>(null);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
+
+  // Abre o modal de nova aula já com o aluno selecionado (?aluno=id em Meus Alunos).
+  useEffect(() => {
+    if (presetStudentId && students.some((s) => s.id === presetStudentId)) setDialogDate(new Date());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Atualiza periodicamente para mostrar aulas novas (ex.: o professor agendou).
   useEffect(() => {
@@ -112,7 +120,7 @@ export default function ScheduleView({
   const canSchedule = isTeacher && !locked;
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5 xl:h-[calc(100dvh-4rem)] xl:overflow-hidden">
       {isTeacher && locked && (
         <div className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-amber-800 dark:text-amber-200">
@@ -148,15 +156,15 @@ export default function ScheduleView({
         </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-5">
+      <div className="flex flex-col xl:flex-row gap-5 xl:flex-1 xl:min-h-0">
       {/* Calendário full-width */}
-      <div className="flex-1 min-w-0 bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="flex-1 min-w-0 bg-surface border border-border rounded-xl overflow-hidden flex flex-col xl:min-h-0">
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS_SHORT.map((w) => (
             <div key={w} className="px-2 py-2.5 text-center text-xs font-medium text-muted">{w}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 xl:grid-rows-6 xl:flex-1 xl:min-h-0">
           {cells.map((d, i) => {
             const inMonth = d.getMonth() === cursor.getMonth();
             const isToday = sameDay(d, today);
@@ -165,16 +173,16 @@ export default function ScheduleView({
               <button
                 key={i}
                 onClick={(e) => openDay(d, e)}
-                className={`min-h-[7.5rem] border-b border-r border-border p-2 text-left align-top transition-colors last:border-r-0 ${
+                className={`min-h-[7.5rem] xl:min-h-0 overflow-hidden flex flex-col border-b border-r border-border p-2 text-left align-top transition-colors last:border-r-0 ${
                   inMonth ? "" : "bg-background/40 text-muted"
                 } hover:bg-background`}
               >
-                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+                <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm ${
                   isToday ? "bg-indigo-600 text-white font-semibold" : ""
                 }`}>
                   {d.getDate()}
                 </span>
-                <div className="mt-1 space-y-1">
+                <div className="mt-1 space-y-1 min-h-0 overflow-y-auto scroll-thin">
                   {dayLessons.slice(0, 4).map((l) => {
                     const st = STATUS[l.status] ?? STATUS.scheduled;
                     return (
@@ -193,17 +201,17 @@ export default function ScheduleView({
       </div>
 
       {/* Lista lateral: próximas aulas */}
-      <aside className="xl:w-80 shrink-0 bg-surface border border-border rounded-xl p-4">
-        <h2 className="font-semibold mb-3">Próximas aulas</h2>
+      <aside className="xl:w-80 shrink-0 bg-surface border border-border rounded-xl p-4 flex flex-col xl:min-h-0">
+        <h2 className="font-semibold mb-3 shrink-0">Próximas aulas</h2>
         {upcoming.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma aula agendada.</p>
         ) : (
-          <ul className="space-y-2 max-h-[32rem] overflow-y-auto">
+          <ul className="space-y-2 xl:flex-1 xl:min-h-0 overflow-y-auto scroll-thin pr-1">
             {upcoming.map((l) => {
               const dt = new Date(l.scheduled_at);
               const st = STATUS[l.status] ?? STATUS.scheduled;
               return (
-                <li key={l.id}>
+                <li key={l.id} className="group relative">
                   <Link href={`/app/lessons/${l.id}`} className="block rounded-lg border border-border p-3 hover:bg-background transition-colors">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium truncate">{l.title}</span>
@@ -214,6 +222,15 @@ export default function ScheduleView({
                     </span>
                     <span className="text-xs text-muted truncate block">com {l.studentName}</span>
                   </Link>
+                  {canSchedule && (
+                    <Link
+                      href={`/app/lessons/${l.id}`}
+                      title="Gerenciar aula"
+                      className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-background"
+                    >
+                      <Pencil size={11} /> Editar
+                    </Link>
+                  )}
                 </li>
               );
             })}
@@ -237,6 +254,7 @@ export default function ScheduleView({
         <LessonDialog
           students={students}
           initialDate={dialogDate}
+          initialStudentId={presetStudentId}
           onClose={() => setDialogDate(null)}
         />
       )}
@@ -266,7 +284,7 @@ function DayPopup({
           </p>
           <button onClick={onClose} aria-label="Fechar" className="text-muted hover:text-foreground"><X size={16} /></button>
         </div>
-        <div className="max-h-56 overflow-y-auto p-2 space-y-1">
+        <div className="max-h-56 overflow-y-auto scroll-thin p-2 space-y-1">
           {lessons.length === 0 ? (
             <p className="text-sm text-muted px-2 py-3">Sem aulas neste dia.</p>
           ) : (
@@ -274,15 +292,26 @@ function DayPopup({
               const dt = new Date(l.scheduled_at);
               const st = STATUS[l.status] ?? STATUS.scheduled;
               return (
-                <Link key={l.id} href={`/app/lessons/${l.id}`} className="block rounded-lg p-2 hover:bg-background transition-colors">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium truncate">{l.title}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${st.chip}`}>{st.label}</span>
-                  </div>
-                  <span className="text-xs text-muted flex items-center gap-1 mt-0.5">
-                    <Clock size={11} /> {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {l.duration_minutes} min
-                  </span>
-                </Link>
+                <div key={l.id} className="group relative">
+                  <Link href={`/app/lessons/${l.id}`} className="block rounded-lg p-2 pr-16 hover:bg-background transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate">{l.title}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${st.chip}`}>{st.label}</span>
+                    </div>
+                    <span className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                      <Clock size={11} /> {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {l.duration_minutes} min
+                    </span>
+                  </Link>
+                  {isTeacher && (
+                    <Link
+                      href={`/app/lessons/${l.id}`}
+                      title="Gerenciar aula"
+                      className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-background"
+                    >
+                      <Pencil size={10} /> Editar
+                    </Link>
+                  )}
+                </div>
               );
             })
           )}
@@ -349,15 +378,18 @@ function stripTime(d: Date) {
 }
 
 function LessonDialog({
-  students, initialDate, onClose,
+  students, initialDate, initialStudentId, onClose,
 }: {
   students: { id: string; full_name: string }[];
   initialDate: Date;
+  initialStudentId?: string;
   onClose: () => void;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [studentId, setStudentId] = useState(students[0]?.id ?? "");
+  const [studentId, setStudentId] = useState(
+    (initialStudentId && students.some((s) => s.id === initialStudentId)) ? initialStudentId : (students[0]?.id ?? ""),
+  );
   const [duration, setDuration] = useState(60);
   const [manualMode, setManualMode] = useState(false);
   const [error, setError] = useState<string | null>(null);

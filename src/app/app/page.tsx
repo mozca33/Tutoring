@@ -12,7 +12,8 @@ type LessonRow = {
   student: { full_name: string } | null;
 };
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ aluno?: string }> }) {
+  const { aluno } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -63,6 +64,7 @@ export default async function Dashboard() {
       locked={isTeacher && !hasAccess}
       trialDaysLeft={sub.subscription_status === "trialing" ? daysLeft : null}
       subscriptionStatus={sub.subscription_status}
+      presetStudentId={isTeacher && hasAccess ? aluno : undefined}
     />
   );
 }
