@@ -4,6 +4,16 @@ export type ChangelogEntry = { date: string; title: string; items: string[] };
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-06-05",
+    title: "Aba Tarefas",
+    items: [
+      "Nova aba 'Tarefas': o professor cria tarefas para um aluno específico (título, instruções, prazo).",
+      "Métricas com indicadores visuais: pendentes, entregues e corrigidas.",
+      "Professor corrige (nota + comentário); aluno marca como entregue. Filtro por aluno.",
+      "Tarefas podem ser avulsas (sem aula vinculada).",
+    ],
+  },
+  {
+    date: "2026-06-05",
     title: "Mensagens: busca no conteúdo, presença e organização",
     items: [
       "Busca também dentro do conteúdo das mensagens (não só pelo nome da conversa).",

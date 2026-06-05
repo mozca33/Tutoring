@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BookOpen, MessageSquare, Users, FolderOpen, User, CreditCard,
+  BookOpen, MessageSquare, Users, FolderOpen, User, CreditCard, ClipboardList,
   Menu, X, LogOut, Moon, Sun, PanelLeftClose, PanelLeft, Copy, Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/app", label: t("nav.lessons"), icon: BookOpen, exact: true },
   { href: "/app/materiais", label: t("nav.materials"), icon: FolderOpen },
   { href: "/app/chat", label: t("nav.messages"), icon: MessageSquare },
+  { href: "/app/tarefas", label: t("nav.tasks"), icon: ClipboardList },
   { href: "/app/contatos", label: t("nav.students"), icon: Users },
   { href: "/app/perfil", label: t("nav.profile"), icon: User },
 ];
@@ -66,7 +67,7 @@ export default function Sidebar({
 
   const nav = [...NAV];
   if (role === "teacher") {
-    nav.splice(4, 0, { href: "/app/assinatura", label: t("nav.subscription"), icon: CreditCard });
+    nav.splice(5, 0, { href: "/app/assinatura", label: t("nav.subscription"), icon: CreditCard });
   }
 
   const NavList = (
