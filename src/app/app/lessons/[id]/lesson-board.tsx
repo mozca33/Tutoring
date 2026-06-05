@@ -44,6 +44,7 @@ export default function LessonBoard({
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [bg, setBg] = useState<{ kind: "none" | "image" | "pdf"; url?: string; page: number; numPages: number }>({ kind: "none", page: 1, numPages: 1 });
+  const [converting, setConverting] = useState(false);
   const [showBgPicker, setShowBgPicker] = useState(false);
 
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -198,9 +199,29 @@ export default function LessonBoard({
 
   async function pickBackground(m: Material) {
     setShowBgPicker(false);
-    const { data } = await createClient().storage.from("lesson-files").createSignedUrl(m.storage_path, 3600);
+    const lower = m.file_name.toLowerCase();
+    const isOffice = /\.(pptx?|docx?)$/.test(lower);
+    let path = m.storage_path;
+    if (isOffice) {
+      setConverting(true);
+      try {
+        const res = await fetch("/api/convert-office", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ storagePath: m.storage_path }),
+        });
+        const j = await res.json();
+        if (!res.ok) { alert(j.error ?? "Falha ao converter o arquivo."); return; }
+        path = j.storagePath;
+      } catch {
+        alert("Falha ao converter o arquivo.");
+        return;
+      } finally {
+        setConverting(false);
+      }
+    }
+    const { data } = await createClient().storage.from("lesson-files").createSignedUrl(path, 3600);
     if (!data) return;
-    const isPdf = m.file_name.toLowerCase().endsWith(".pdf");
+    const isPdf = isOffice || lower.endsWith(".pdf");
     setBg({ kind: isPdf ? "pdf" : "image", url: data.signedUrl, page: 1, numPages: 1 });
   }
 
@@ -287,6 +308,7 @@ export default function LessonBoard({
             <button onClick={() => setBg((b) => ({ ...b, page: Math.min(b.numPages, b.page + 1) }))} className="p-1 rounded bg-white/10"><ChevronRight size={16} /></button>
           </div>
         )}
+        {converting && <span className="text-white/80 text-sm animate-pulse">Convertendo arquivo…</span>}
         <button onClick={onClose} className="ml-auto p-2 rounded-lg bg-white/10 text-white hover:bg-white/20"><X size={18} /></button>
 
         {showBgPicker && (
@@ -299,7 +321,7 @@ export default function LessonBoard({
                 {m.lessonTitle && <span className="block text-[11px] text-muted truncate">{m.lessonTitle}</span>}
               </button>
             ))}
-            <p className="text-[11px] text-muted px-2 pt-1">PPT/DOCX: exporte para PDF para usar de fundo.</p>
+            <p className="text-[11px] text-muted px-2 pt-1">PPT e DOCX são convertidos para PDF automaticamente.</p>
           </div>
         )}
       </div>

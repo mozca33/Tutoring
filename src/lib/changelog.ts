@@ -4,6 +4,13 @@ export type ChangelogEntry = { date: string; title: string; items: string[] };
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-06-05",
+    title: "PPT e DOCX no quadro",
+    items: [
+      "Quadro: PPT/PPTX e DOC/DOCX viram fundo automaticamente (convertidos para PDF), com navegação por página.",
+    ],
+  },
+  {
+    date: "2026-06-05",
     title: "Aba Tarefas",
     items: [
       "Nova aba 'Tarefas': o professor cria tarefas para um aluno específico (título, instruções, prazo).",

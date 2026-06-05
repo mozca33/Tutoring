@@ -23,6 +23,7 @@ src/
       notify/                E-mails (Resend): aula agendada, lição atribuída/corrigida
       invite-student/        Professor cria conta do aluno + gera LINK manual
       resend-invite/         Gera novo link de acesso do aluno
+      convert-office/        PPT/DOCX → PDF via CloudConvert (salva em lesson-files/converted/)
     app/                     Área logada (layout com Sidebar + MessageNotifier + PreferencesProvider)
       layout.tsx             Gate de auth + onboarding; carrega perfil/preferências
       page.tsx               Dashboard = CALENDÁRIO (ScheduleView) + paywall/trial
