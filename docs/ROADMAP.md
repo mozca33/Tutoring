@@ -10,13 +10,23 @@ Estado do que falta, organizado por **o que depende de quê**. Marque itens conf
 - Performance: N+1 das notificações, avatares com next/image.
 - Qualidade: status das aulas centralizado (`src/lib/lesson.ts`), testes unitários (Vitest, 60) + E2E (Playwright).
 
+## ✅ Concluído (sprint 12 — 2026-06-05)
+- **Meus Alunos** (cards/stats/ações), **hub do aluno** `/app/alunos/[id]`, atalho Agendar com aluno pré-selecionado.
+- **Dashboard** sem scroll externo, "Próximas aulas" até o fim, ações rápidas de editar aula, toast no topo.
+- **Mensagens 2.0**: busca no conteúdo, presença/visto por último, fixar/arquivar, **"lido" no servidor** (`conversation_state`, migration 0024) — substitui o `notif_seen` do localStorage.
+- **Paginação**: 50 mensagens + "carregar anteriores"; materiais com "Ver mais".
+- **Aba Tarefas** (`/app/tarefas`, migration 0025): criação por aluno, métricas, correção/entrega.
+- **PPT/DOCX no quadro**: `/api/convert-office` (CloudConvert → PDF).
+- **Sentry** instalado (no-op sem DSN). **A11y + base de i18n**. **E2E autenticado**.
+
 ## ⏳ Pendente (precisa de você / serviço externo)
 - **Leaked password protection** (Supabase → Auth, 1 clique).
 - **Webhook do LiveKit**: cadastrar a URL `…/api/livekit-webhook` em LiveKit Cloud → Webhooks.
-- **Sentry** (monitoramento): criar conta + DSN; depois instalo `@sentry/nextjs`.
+- **Sentry**: criar conta + DSN e adicionar `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` na Vercel (código já pronto, fica ligado ao definir as vars).
+- **CloudConvert**: criar conta + `CLOUDCONVERT_API_KEY` na Vercel (senão PPT/DOCX não convertem).
 - **Stripe Customer Portal**: ativar no dashboard (Settings → Billing) se necessário.
 - **Resend domínio**, **Stripe live**, **env vars na Vercel** (incl. `STRIPE_PRICE_ID_ANNUAL`, `ADMIN_EMAILS`).
-- PPT/DOCX no quadro, transcrição de aulas longas, busca, paginação, i18n/a11y.
+- Transcrição de aulas longas (worker dedicado); idiomas adicionais no i18n.
 
 ## A) Buildável agora (sem credenciais)
 
@@ -27,8 +37,8 @@ Estado do que falta, organizado por **o que depende de quê**. Marque itens conf
 - Falta (opcional): cor personalizada (color picker livre).
 
 ### A2. Centro de notificações persistente ✅ (feito)
-- Sino na sidebar/topbar com contador e lista (mensagens + eventos de aula). Não-lidas via `localStorage` (`notif_seen`).
-- Falta (opcional): persistir "lido" no servidor (multi-dispositivo) com coluna `read_at`.
+- Sino na sidebar/topbar com contador e lista (mensagens + eventos de aula).
+- ✅ "Lido" no servidor (multi-dispositivo) via `conversation_state.last_read_at` (migration 0024).
 
 ### A3. Granularidade do changelog
 - Quebrar entradas por versão/semver e datar com mais precisão.
@@ -53,9 +63,9 @@ Estado do que falta, organizado por **o que depende de quê**. Marque itens conf
 
 ## C) Depende de serviço externo
 
-### C1. PPT/DOCX como fundo do quadro
-- Exige conversão para PDF/imagem (LibreOffice headless não roda na Vercel).
-- **Opções:** API de conversão (CloudConvert/ConvertAPI — precisa chave) ou worker próprio. Por ora: orientar exportar para PDF.
+### C1. PPT/DOCX como fundo do quadro ✅ (feito)
+- Conversão Office→PDF via **CloudConvert** em `/api/convert-office` (salva em `lesson-files/converted/`).
+- Falta só o usuário definir `CLOUDCONVERT_API_KEY` na Vercel para ligar.
 
 ### C2. Transcrição de aulas longas
 - Whisper/Gemini têm limites de tamanho/tempo na função serverless. Para aulas longas: extrair áudio + chunking ou um worker dedicado.
