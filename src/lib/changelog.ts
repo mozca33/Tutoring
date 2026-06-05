@@ -21,6 +21,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Link 'pular para o conteúdo', foco visível por teclado e respeito a 'menos movimento'.",
       "Rótulos de leitor de tela (aria-label/aria-current) na navegação e ações de conversa.",
       "Base de internacionalização (i18n) centralizando textos da navegação para futuros idiomas.",
+      "Testes E2E autenticados (Playwright): login → dashboard → agendar/navegar.",
     ],
   },
   {
