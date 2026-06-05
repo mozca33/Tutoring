@@ -30,7 +30,8 @@ src/
       sidebar.tsx            Navegação + código do professor + tema/sair
       message-notifier.tsx   Toasts de mensagem e de evento de aula
       materiais/             Lista de materiais (todos ou ?aula=id) + preview/anotar
-      chat/[userId]/         Conversa (timeline com eventos, blocos por dia/aula, @aula)
+      chat/                  Mensagens 2 painéis: busca (nome+conteúdo), presença, fixar/arquivar, não lidas no servidor
+      chat/[userId]/         Conversa (timeline com eventos, blocos por dia/aula, @aula); marca lido via RPC
       contatos/              "Meus Alunos": cards (avatar, stats, ações) + convite por modal
       alunos/[id]/           Hub do aluno: métricas, histórico de aulas e de lições
       perfil/                Editar perfil, avatar, tema, densidade
@@ -53,11 +54,12 @@ src/
   lib/                       supabase/ (client/server/middleware), stripe, egress, email,
                              subscription, preferences, validation, uploads, auth-redirect, changelog
   middleware.ts              Refresh de sessão + proteção de /app
-supabase/migrations/         0001..0019 (schema, RLS, realtime, buckets, funções, cron)
+supabase/migrations/         0001..0024 (schema, RLS, realtime, buckets, funções, cron, conversation_state/presença)
 ```
 
 ## Banco (tabelas principais)
-`profiles` (role, teacher_code, subscription_*, theme/density, invited_pending),
+`profiles` (role, teacher_code, subscription_*, theme/density, invited_pending, last_seen_at),
+`conversation_state` (user_id, peer_id, last_read_at, pinned, archived; RPCs mark_conversation_read/touch_last_seen),
 `relationships`, `lessons` (status: scheduled|rescheduled|live|completed|cancelled; recording_*, transcript),
 `messages` (lesson_id, kind text|event, event_type, justification),
 `lesson_files`, `homeworks`, `lesson_comments`, `file_annotations`, `board_strokes`.

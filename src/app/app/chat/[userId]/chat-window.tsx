@@ -112,8 +112,11 @@ export default function ChatWindow({
             (m.sender_id === otherUserId && m.recipient_id === currentUserId);
           if (!inConvo) return;
           setMessages((prev) => prev.some((p) => p.id === m.id) ? prev : [...prev, m]);
+          if (m.sender_id === otherUserId) supabase.rpc("mark_conversation_read", { p_peer: otherUserId });
         })
       .subscribe();
+    // Marca como lida ao abrir a conversa.
+    supabase.rpc("mark_conversation_read", { p_peer: otherUserId });
     return () => { supabase.removeChannel(channel); };
   }, [currentUserId, otherUserId]);
 

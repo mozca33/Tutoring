@@ -10,10 +10,12 @@ import type { Conversation } from "./messages-view";
 type Msg = any;
 
 export default function ChatConversation({
-  currentUserId, other, onBack,
+  currentUserId, other, online, lastSeen, onBack,
 }: {
   currentUserId: string;
   other: Conversation;
+  online?: boolean;
+  lastSeen?: string | null;
   onBack: () => void;
 }) {
   const [initial, setInitial] = useState<Msg[] | null>(null);
@@ -28,13 +30,15 @@ export default function ChatConversation({
       .then(({ data }) => setInitial(data ?? []));
   }, [other.id, currentUserId]);
 
+  const status = online ? "online" : lastSeen ? `visto ${lastSeen}` : (other.role === "teacher" ? "Professor" : "Aluno");
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex items-center gap-2 mb-3">
         <button onClick={onBack} className="lg:hidden p-1.5 rounded-lg hover:bg-surface text-foreground" aria-label="Voltar"><ChevronLeft size={20} /></button>
         <div className="min-w-0">
           <p className="font-semibold truncate">{other.name}</p>
-          <p className="text-xs text-muted">{other.role === "teacher" ? "Professor" : "Aluno"}</p>
+          <p className={`text-xs ${online ? "text-emerald-600 dark:text-emerald-400" : "text-muted"}`}>{online ? "● " : ""}{status}</p>
         </div>
       </div>
       {initial === null ? (

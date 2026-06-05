@@ -4,6 +4,16 @@ export type ChangelogEntry = { date: string; title: string; items: string[] };
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-06-05",
+    title: "Mensagens: busca no conteúdo, presença e organização",
+    items: [
+      "Busca também dentro do conteúdo das mensagens (não só pelo nome da conversa).",
+      "Presença em tempo real: indicador de online e 'visto por último' nas conversas.",
+      "Fixar e arquivar conversas; arquivadas ficam em uma seção recolhível.",
+      "Contador de não lidas calculado no servidor (não some ao trocar de dispositivo).",
+    ],
+  },
+  {
+    date: "2026-06-05",
     title: "Meus Alunos, atalhos de agenda e ajustes de tela",
     items: [
       "Meus Alunos virou painel de cards: avatar, status, mini-stats (aulas, próxima, lições pendentes) e ações rápidas (Agendar, Mensagem).",
