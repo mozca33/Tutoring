@@ -21,9 +21,12 @@ export type MaterialGroup = {
   }[];
 };
 
+const PAGE = 10;
+
 export default function MaterialsList({ groups, currentUserId }: { groups: MaterialGroup[]; currentUserId: string }) {
   const [preview, setPreview] = useState<{ name: string; path: string } | null>(null);
   const [annotate, setAnnotate] = useState<{ id: string; name: string; path: string } | null>(null);
+  const [shown, setShown] = useState(PAGE);
 
   async function download(path: string) {
     const supabase = createClient();
@@ -36,9 +39,11 @@ export default function MaterialsList({ groups, currentUserId }: { groups: Mater
     return <p className="text-muted text-sm">Nenhum material enviado nas suas aulas ainda.</p>;
   }
 
+  const visible = groups.slice(0, shown);
+
   return (
     <div className="space-y-6">
-      {groups.map((g) => (
+      {visible.map((g) => (
         <section key={g.lessonId} className="bg-surface border border-border rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="min-w-0">
@@ -72,6 +77,14 @@ export default function MaterialsList({ groups, currentUserId }: { groups: Mater
           </ul>
         </section>
       ))}
+      {shown < groups.length && (
+        <div className="text-center">
+          <button onClick={() => setShown((s) => s + PAGE)}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface transition-colors">
+            Ver mais ({groups.length - shown})
+          </button>
+        </div>
+      )}
       {preview && (
         <FilePreview fileName={preview.name} storagePath={preview.path} onClose={() => setPreview(null)} />
       )}

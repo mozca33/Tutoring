@@ -75,19 +75,51 @@ export default function ChatWindow({
   initial: Message[];
 }) {
   const [messages, setMessages] = useState<Message[]>(initial);
+  const [hasMore, setHasMore] = useState(initial.length >= 50);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [lessons, setLessons] = useState<LessonRef[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prependRef = useRef<number | null>(null);
 
   function toggle(key: string) { setCollapsed((p) => ({ ...p, [key]: !p[key] })); }
   const lessonTitle = (id?: string | null) => lessons.find((l) => l.id === id)?.title ?? "Aula";
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    const el = scrollRef.current;
+    if (!el) return;
+    if (prependRef.current !== null) {
+      // Mantém a posição de leitura ao carregar mensagens anteriores.
+      el.scrollTop = el.scrollHeight - prependRef.current;
+      prependRef.current = null;
+    } else {
+      el.scrollTo({ top: el.scrollHeight });
+    }
   }, [messages]);
+
+  async function loadOlder() {
+    if (loadingOlder || messages.length === 0) return;
+    setLoadingOlder(true);
+    const supabase = createClient();
+    const oldest = messages[0].created_at;
+    const { data } = await supabase
+      .from("messages")
+      .select("id, sender_id, recipient_id, content, created_at, kind, lesson_id, event_type, justification")
+      .or(`and(sender_id.eq.${currentUserId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${currentUserId})`)
+      .lt("created_at", oldest)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    const older = (data ?? []).reverse();
+    setHasMore(older.length >= 50);
+    if (older.length) {
+      prependRef.current = scrollRef.current?.scrollHeight ?? 0;
+      setMessages((prev) => [...older, ...prev]);
+    }
+    setLoadingOlder(false);
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -179,7 +211,15 @@ export default function ChatWindow({
 
   return (
     <div className="bg-surface border border-border rounded-xl flex flex-col h-full min-h-0">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 scroll-thin">
+        {hasMore && (
+          <div className="text-center">
+            <button onClick={loadOlder} disabled={loadingOlder}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50">
+              {loadingOlder ? "Carregando…" : "Carregar mensagens anteriores"}
+            </button>
+          </div>
+        )}
         {messages.length === 0 && <p className="text-muted text-center mt-8">Nenhuma mensagem. Diga olá!</p>}
         {blocks.map((b) => {
           const col = isCollapsed(b);

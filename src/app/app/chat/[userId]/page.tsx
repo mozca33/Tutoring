@@ -13,14 +13,16 @@ export default async function ChatPage({ params }: { params: Promise<{ userId: s
     .from("profiles").select("id, full_name, role").eq("id", userId).single();
   if (!other) notFound();
 
-  const { data: messages } = await supabase
+  const { data: recent } = await supabase
     .from("messages")
     .select("id, sender_id, recipient_id, content, created_at, kind, lesson_id, event_type, justification")
     .or(
       `and(sender_id.eq.${user.id},recipient_id.eq.${userId}),` +
       `and(sender_id.eq.${userId},recipient_id.eq.${user.id})`
     )
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(50);
+  const messages = (recent ?? []).reverse();
 
   return (
     <div className="space-y-4">

@@ -10,6 +10,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Presença em tempo real: indicador de online e 'visto por último' nas conversas.",
       "Fixar e arquivar conversas; arquivadas ficam em uma seção recolhível.",
       "Contador de não lidas calculado no servidor (não some ao trocar de dispositivo).",
+      "Conversas carregam as 50 mensagens mais recentes, com 'carregar anteriores'.",
+      "Materiais: lista paginada com 'Ver mais' para não carregar tudo de uma vez.",
     ],
   },
   {

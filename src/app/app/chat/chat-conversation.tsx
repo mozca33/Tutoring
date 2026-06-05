@@ -26,8 +26,9 @@ export default function ChatConversation({
     supabase.from("messages")
       .select("id, sender_id, recipient_id, content, created_at, kind, lesson_id, event_type, justification")
       .or(`and(sender_id.eq.${currentUserId},recipient_id.eq.${other.id}),and(sender_id.eq.${other.id},recipient_id.eq.${currentUserId})`)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => setInitial(data ?? []));
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => setInitial((data ?? []).reverse()));
   }, [other.id, currentUserId]);
 
   const status = online ? "online" : lastSeen ? `visto ${lastSeen}` : (other.role === "teacher" ? "Professor" : "Aluno");
